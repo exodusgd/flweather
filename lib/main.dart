@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
+import 'package:geocoding/geocoding.dart' as geocod;
 
 void main() {
   runApp(const FlweatherApp());
@@ -32,6 +33,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  String _locationCoords = "Null";
   String _locationName = "Null";
 
   Location location = Location();
@@ -56,20 +58,40 @@ class _MainPageState extends State<MainPage> {
       }
     }
 
-    // location service is enabled and permission is granted
-    _locationData = await location.getLocation();
-    _updateCurrentLocation(_locationData.toString());
+    // if location service is enabled and permission is granted
+    // then get location, then covert location into a name, then update the ui
+    location.getLocation().then(
+      (locData) => {
+        _getLocationNameFromData(locData).then(
+          (locName) => {_updateCurrentLocation(locData.toString(), locName)},
+        ),
+      },
+    );
   }
 
-  void _updateCurrentLocation(String newLocationName) {
+  void _updateCurrentLocation(
+    String newLocationCoords,
+    String newLocationName,
+  ) {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
+      _locationCoords = newLocationCoords;
       _locationName = newLocationName;
     });
+  }
+
+  Future<String> _getLocationNameFromData(LocationData? locData) async {
+    List<geocod.Placemark> placemarks = await geocod.placemarkFromCoordinates(
+      locData!.latitude!,
+      locData.longitude!,
+    );
+    return placemarks.reversed.last.locality.toString() +
+        ", " +
+        placemarks.reversed.last.country.toString();
   }
 
   @override
@@ -91,6 +113,10 @@ class _MainPageState extends State<MainPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text("Current location:", style: TextStyle(fontSize: 30)),
+            Text(
+              _locationCoords,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             Text(
               _locationName,
               style: Theme.of(context).textTheme.headlineMedium,
