@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 
 void main() {
   runApp(const FlweatherApp());
@@ -20,17 +21,9 @@ class FlweatherApp extends StatelessWidget {
   }
 }
 
+// ----------- STATEFUL WIDGET -----------
 class MainPage extends StatefulWidget {
   const MainPage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -39,16 +32,43 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _counter = 0;
+  String _locationName = "Null";
 
-  void _incrementCounter() {
+  Location location = Location();
+  bool _isLocationEnabled = false;
+  PermissionStatus? _locationPermissionStatus;
+  LocationData? _locationData;
+
+  void _requestLocationPermission() async {
+    _isLocationEnabled = await location.serviceEnabled();
+    if (!_isLocationEnabled) {
+      _isLocationEnabled = await location.requestService();
+      if (!_isLocationEnabled) {
+        return;
+      }
+    }
+
+    _locationPermissionStatus = await location.hasPermission();
+    if (_locationPermissionStatus == PermissionStatus.denied) {
+      _locationPermissionStatus = await location.requestPermission();
+      if (_locationPermissionStatus != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    // location service is enabled and permission is granted
+    _locationData = await location.getLocation();
+    _updateCurrentLocation(_locationData.toString());
+  }
+
+  void _updateCurrentLocation(String newLocationName) {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      _counter++;
+      _locationName = newLocationName;
     });
   }
 
@@ -70,18 +90,19 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+            const Text("Current location:", style: TextStyle(fontSize: 30)),
             Text(
-              '$_counter',
+              _locationName,
               style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _requestLocationPermission();
+              },
+              child: const Text("Get location"),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
