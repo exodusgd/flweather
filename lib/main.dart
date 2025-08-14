@@ -1,13 +1,11 @@
 // Flutter imports
 import 'package:flutter/material.dart';
 
-// Package imports
-import 'package:location/location.dart';
-import 'package:geocoding/geocoding.dart' as geocod;
-
 // Project imports
+import 'package:flweather/services/location_service.dart';
 import 'package:flweather/services/weather_service.dart';
 import 'models/weather_model.dart';
+import 'models/location_model.dart';
 
 void main() {
   runApp(const FlweatherApp());
@@ -47,76 +45,38 @@ class _MainPageState extends State<MainPage> {
   String _locationWeatherCondition = "Null";
 
   // Location vars
-  Location location = Location();
-  bool _isLocationEnabled = false;
-  PermissionStatus? _locationPermissionStatus;
-  LocationData? _locationData;
+  final LocationService _locationService = LocationService();
 
   // Weather vars
   final WeatherService _weatherService = WeatherService(
+    // API key from openweathermap.org
     apiKey: "391870125944c3e1dd3eb3d26bdf5f85",
   );
-  Weather? _weather;
 
-  void _requestLocationPermission() async {
-    _isLocationEnabled = await location.serviceEnabled();
-    if (!_isLocationEnabled) {
-      _isLocationEnabled = await location.requestService();
-      if (!_isLocationEnabled) {
-        return;
-      }
-    }
-
-    _locationPermissionStatus = await location.hasPermission();
-    if (_locationPermissionStatus == PermissionStatus.denied) {
-      _locationPermissionStatus = await location.requestPermission();
-      if (_locationPermissionStatus != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    // if location service is enabled and permission is granted
-    // then get location, then covert location into a name, then update the ui
-    location.getLocation().then(
-      (locData) => {
-        _getLocationNameFromData(locData).then(
-          (locName) => {
-            _updateCurrentLocation(
-              "lat: ${locData.latitude.toString()} \n long: ${locData.longitude.toString()}",
-              locName,
-            ),
-            _weatherService
-                .getWeather(locData.latitude!, locData.longitude!)
-                .then((locWeather) => {_updateCurrentWeather(locWeather)}),
-          },
-        ),
+  void _fetchLocationAndWeather() async {
+    _locationService.getLocation().then(
+      (location) => {
+        _updateCurrentLocation(location!),
+        _weatherService
+            .getWeather(location.latitude, location.longitude)
+            .then((weather) => {_updateCurrentWeather(weather)}),
       },
     );
   }
 
-  void _updateCurrentLocation(
-    String newLocationCoords,
-    String newLocationName,
-  ) {
+  void _updateCurrentLocation(Location newLocation) {
     setState(() {
-      _locationCoords = newLocationCoords;
-      _locationName = newLocationName;
+      _locationCoords = "lat: ${newLocation.latitude.toString()} \n long: ${newLocation.longitude.toString()}";
+      _locationName = "${newLocation.locality}, ${newLocation.country}";
     });
   }
 
   void _updateCurrentWeather(Weather newWeather) {
     setState(() {
-      _locationTemperature = "${(newWeather.temperature - 273.15).round().toString()} ºC";
+      _locationTemperature =
+          "${(newWeather.temperature - 273.15).round().toString()} ºC";
       _locationWeatherCondition = newWeather.condition;
     });
-  }
-
-  Future<String> _getLocationNameFromData(LocationData? locData) async {
-    List<geocod.Placemark> placemarks = await geocod.placemarkFromCoordinates(
-      locData!.latitude!,
-      locData.longitude!,
-    );
-    return "${placemarks.reversed.last.locality}, ${placemarks.reversed.last.country}";
   }
 
   @override
@@ -149,7 +109,7 @@ class _MainPageState extends State<MainPage> {
             ),
             ElevatedButton(
               onPressed: () {
-                _requestLocationPermission();
+                _fetchLocationAndWeather();
               },
               child: const Text("Get location"),
             ),
