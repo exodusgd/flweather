@@ -63,7 +63,12 @@ class _MainPageState extends State<MainPage> {
     location.getLocation().then(
       (locData) => {
         _getLocationNameFromData(locData).then(
-          (locName) => {_updateCurrentLocation(locData.toString(), locName)},
+          (locName) => {
+            _updateCurrentLocation(
+              "lat: ${locData.latitude.toString()} \n long: ${locData.longitude.toString()}",
+              locName,
+            ),
+          },
         ),
       },
     );
@@ -75,10 +80,7 @@ class _MainPageState extends State<MainPage> {
   ) {
     setState(() {
       // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
+      // changed in this State, which causes it to rerun the build method
       _locationCoords = newLocationCoords;
       _locationName = newLocationName;
     });
@@ -89,9 +91,7 @@ class _MainPageState extends State<MainPage> {
       locData!.latitude!,
       locData.longitude!,
     );
-    return placemarks.reversed.last.locality.toString() +
-        ", " +
-        placemarks.reversed.last.country.toString();
+    return "${placemarks.reversed.last.locality}, ${placemarks.reversed.last.country}";
   }
 
   @override
@@ -99,15 +99,7 @@ class _MainPageState extends State<MainPage> {
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Colors.blue,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(backgroundColor: Colors.blue, title: Text(widget.title)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
