@@ -35,23 +35,16 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
   // Shared preferences
   SharedPreferences? _sharedPrefs;
 
-  // Map with temperature unit names as map keys and enum values as map values
-  // (populated on initState)
-  Map<String, TemperatureUnits> tempUnitStringToValue = {};
-
   // Temperature units vars
   final TemperatureUnits _defaultTemperatureUnit = TemperatureUnits.celsius;
-  late TemperatureUnits currentTemperatureUnit;
+  late TemperatureUnits _currentTemperatureUnit;
+  final TemperatureUnitsUtilities _tempUnitsUtils = TemperatureUnitsUtilities();
 
   // InitState runs before the button is built
   @override
   void initState() {
     super.initState();
-    // Populates the tempUnitNameToValue map
-    for(TemperatureUnits unit in TemperatureUnits.values){
-      tempUnitStringToValue[unit.toString()] = unit;
-    }
-    currentTemperatureUnit = _defaultTemperatureUnit;
+    _currentTemperatureUnit = _defaultTemperatureUnit;
     // Initializes shared preferences
     _initSharedPreferences();
   }
@@ -62,7 +55,9 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
     String? tempUnit = _sharedPrefs!.getString(
       SharedPrefsKeys.temperatureUnit.toString(),
     );
-    currentTemperatureUnit = tempUnitStringToValue[tempUnit!]!;
+    _currentTemperatureUnit = _tempUnitsUtils.convertStringToValue(
+      tempUnit!,
+    )!;
     // Call setState to update the button
     setState(() {});
   }
@@ -80,15 +75,15 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
           label: Text("Fahrenheit"),
         ),
       ],
-      selected: <TemperatureUnits>{currentTemperatureUnit},
+      selected: <TemperatureUnits>{_currentTemperatureUnit},
       onSelectionChanged: (Set<TemperatureUnits> newSelection) {
         setState(() {
-          currentTemperatureUnit = newSelection.first;
+          _currentTemperatureUnit = newSelection.first;
         });
         if (_sharedPrefs != null) {
           _sharedPrefs!.setString(
             SharedPrefsKeys.temperatureUnit.toString(),
-            currentTemperatureUnit.toString(),
+            _currentTemperatureUnit.toString(),
           );
         }
       },

@@ -46,8 +46,11 @@ class _MainPageState extends State<MainPage> {
   // Display vars
   String _locationCoords = "Null";
   String _locationName = "Null";
-  String _locationTemperature = "Null";
+  String _locationTemperatureString = "Null";
   String _locationWeatherCondition = "Null";
+
+  bool _hasReceivedWeatherInfo = false;
+  double _locationTemperature = 0;
 
   // Location vars
   final LocationService _locationService = LocationService();
@@ -61,6 +64,9 @@ class _MainPageState extends State<MainPage> {
   // Shared preferences
   SharedPreferences? _sharedPrefs;
 
+  // Temperature units
+  final TemperatureUnitsUtilities _tempUnitsUtils = TemperatureUnitsUtilities();
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +78,7 @@ class _MainPageState extends State<MainPage> {
     _sharedPrefs = await SharedPreferences.getInstance();
   }
 
+  // TODO: Display some sort of error message when location services/perms are not allowed
   void _fetchLocationAndWeather() async {
     _locationService.getLocation().then(
       (location) => {
@@ -87,7 +94,7 @@ class _MainPageState extends State<MainPage> {
     setState(() {
       _locationCoords = "loading...";
       _locationName = "loading...";
-      _locationTemperature = "loading...";
+      _locationTemperatureString = "loading...";
       _locationWeatherCondition = "loading...";
     });
   }
@@ -101,13 +108,37 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
+  String _formatTemperature(double tempToFormat) {
+    String newTemperature = "Null";
+    if (_sharedPrefs != null) {
+      String? tempUnitString = _sharedPrefs!.getString(
+        SharedPrefsKeys.temperatureUnit.toString(),
+      );
+      if (tempUnitString != null) {
+        TemperatureUnits tempUnit = _tempUnitsUtils.convertStringToValue(
+          tempUnitString,
+        )!;
+        switch (tempUnit) {
+          case TemperatureUnits.celsius:
+            newTemperature = "${(tempToFormat - 273.15).round().toString()} ºC";
+
+          case TemperatureUnits.fahrenheit:
+            newTemperature =
+                "${(1.8 * (tempToFormat - 273) + 32).round().toString()} ºF";
+        }
+        return newTemperature;
+      }
+    }
+    // Defaults to celsius
+    newTemperature = "${(tempToFormat - 273.15).round().toString()} ºC";
+    return newTemperature;
+  }
+
   void _updateCurrentWeather(Weather newWeather) {
-    // if(_sharedPrefs != null){
-    //   String? tempUnit = _sharedPrefs!.getString(SharedPrefsKeys.temperatureUnit.toString());
-    // }
+    _hasReceivedWeatherInfo = true;
+    _locationTemperature = newWeather.temperature;
     setState(() {
-      _locationTemperature =
-          "${(newWeather.temperature - 273.15).round().toString()} ºC";
+      _locationTemperatureString = _formatTemperature(_locationTemperature);
       _locationWeatherCondition = newWeather.condition;
     });
   }
@@ -132,7 +163,7 @@ class _MainPageState extends State<MainPage> {
             ),
             const Text("Weather at location:", style: TextStyle(fontSize: 30)),
             Text(
-              _locationTemperature,
+              _locationTemperatureString,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             Text(
@@ -152,7 +183,15 @@ class _MainPageState extends State<MainPage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, "settings");
+          Navigator.pushNamed(context, "settings").then(
+            (value) => setState(() {
+              if (_hasReceivedWeatherInfo) {
+                _locationTemperatureString = _formatTemperature(
+                  _locationTemperature,
+                );
+              }
+            }),
+          );
         },
         backgroundColor: Colors.blueAccent,
         child: const Icon(Icons.settings),
