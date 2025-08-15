@@ -1,12 +1,17 @@
 // Flutter imports
 import 'package:flutter/material.dart';
 
+// Package imports
+import 'package:shared_preferences/shared_preferences.dart';
+
 // Project imports
 import 'package:flweather/services/location_service.dart';
 import 'package:flweather/services/weather_service.dart';
 import 'models/weather_model.dart';
 import 'models/location_model.dart';
 import 'package:flweather/settings_page.dart';
+import 'enums/shared_prefs_keys.dart';
+import 'enums/temperature_units.dart';
 
 void main() {
   runApp(const FlweatherApp());
@@ -53,6 +58,20 @@ class _MainPageState extends State<MainPage> {
     apiKey: "391870125944c3e1dd3eb3d26bdf5f85",
   );
 
+  // Shared preferences
+  SharedPreferences? _sharedPrefs;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initializes shared preferences before the page is built
+    _initSharedPreferences();
+  }
+
+  void _initSharedPreferences() async {
+    _sharedPrefs = await SharedPreferences.getInstance();
+  }
+
   void _fetchLocationAndWeather() async {
     _locationService.getLocation().then(
       (location) => {
@@ -83,6 +102,9 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _updateCurrentWeather(Weather newWeather) {
+    // if(_sharedPrefs != null){
+    //   String? tempUnit = _sharedPrefs!.getString(SharedPrefsKeys.temperatureUnit.toString());
+    // }
     setState(() {
       _locationTemperature =
           "${(newWeather.temperature - 273.15).round().toString()} ºC";
