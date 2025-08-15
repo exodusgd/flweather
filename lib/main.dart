@@ -6,6 +6,7 @@ import 'package:flweather/services/location_service.dart';
 import 'package:flweather/services/weather_service.dart';
 import 'models/weather_model.dart';
 import 'models/location_model.dart';
+import 'package:flweather/settings_page.dart';
 
 void main() {
   runApp(const FlweatherApp());
@@ -22,16 +23,15 @@ class FlweatherApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
-      home: const MainPage(title: 'Flweather'),
+      home: const MainPage(),
+      routes: {"settings": (context) => const SettingsPage()},
     );
   }
 }
 
 // ----------- STATEFUL WIDGET -----------
 class MainPage extends StatefulWidget {
-  const MainPage({super.key, required this.title});
-
-  final String title;
+  const MainPage({super.key});
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -64,9 +64,20 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  void _setLoadingText() {
+    setState(() {
+      _locationCoords = "loading...";
+      _locationName = "loading...";
+      _locationTemperature = "loading...";
+      _locationWeatherCondition = "loading...";
+    });
+  }
+
   void _updateCurrentLocation(Location newLocation) {
     setState(() {
-      _locationCoords = "lat: ${newLocation.latitude.toString()} \n long: ${newLocation.longitude.toString()}";
+      _locationCoords =
+          "lat: ${newLocation.latitude.toString()} \n"
+          "long: ${newLocation.longitude.toString()}";
       _locationName = "${newLocation.locality}, ${newLocation.country}";
     });
   }
@@ -84,7 +95,6 @@ class _MainPageState extends State<MainPage> {
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.blue, title: Text(widget.title)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -109,12 +119,21 @@ class _MainPageState extends State<MainPage> {
             ),
             ElevatedButton(
               onPressed: () {
+                _setLoadingText();
                 _fetchLocationAndWeather();
               },
-              child: const Text("Get location"),
+              child: const Text("Get weather"),
             ),
           ],
         ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, "settings");
+        },
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.settings),
       ),
     );
   }
