@@ -3,6 +3,7 @@ import 'dart:async';
 
 // Flutter imports
 import 'package:flutter/material.dart';
+import 'package:flweather/enums/weather_conditions.dart';
 
 // Package imports
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,6 +66,8 @@ class _MainPageState extends State<MainPage> {
     // API key from openweathermap.org
     apiKey: "391870125944c3e1dd3eb3d26bdf5f85",
   );
+  // TODO: change default 3D icon
+  String _3dModelPath = "assets/3d/sunny_icon.glb";
 
   // Shared preferences
   SharedPreferences? _sharedPrefs;
@@ -149,9 +152,10 @@ class _MainPageState extends State<MainPage> {
   void _updateCurrentWeather(Weather newWeather) {
     _hasReceivedWeatherInfo = true;
     _locationTemperature = newWeather.temperature;
+    _updateWeather3DModel(newWeather);
     setState(() {
       _locationTemperatureString = _formatTemperature(_locationTemperature);
-      _locationWeatherCondition = newWeather.condition;
+      _locationWeatherCondition = newWeather.conditionString;
     });
   }
 
@@ -178,6 +182,36 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
+  void _updateWeather3DModel(Weather newWeather) {
+    String basePath = "assets/3d/";
+    switch (newWeather.condition!) {
+      case WeatherConditions.cloudy:
+        _3dModelPath =
+            "$basePath"
+            "cloudy_icon.glb";
+
+      case WeatherConditions.rain:
+        _3dModelPath =
+            "$basePath"
+            "rain_icon.glb";
+
+      case WeatherConditions.snow:
+        _3dModelPath =
+            "$basePath"
+            "snow_icon.glb";
+
+      case WeatherConditions.sunny:
+        _3dModelPath =
+            "$basePath"
+            "sunny_icon.glb";
+
+      case WeatherConditions.thunder:
+        _3dModelPath =
+            "$basePath"
+            "thunder_icon.glb";
+    }
+  }
+
   // --------------------------------- BUILD ---------------------------------
   @override
   Widget build(BuildContext context) {
@@ -188,10 +222,7 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            SizedBox(
-              height: 400,
-              child: Flutter3DViewer(src: "assets/3d/sunny_icon.glb"),
-            ),
+            SizedBox(height: 400, child: Flutter3DViewer(src: _3dModelPath)),
             const Text("Current time:", style: TextStyle(fontSize: 30)),
             Text(
               _currentTime,
