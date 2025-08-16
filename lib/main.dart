@@ -1,15 +1,19 @@
+// Dart imports
+import 'dart:async';
+
 // Flutter imports
 import 'package:flutter/material.dart';
 
 // Package imports
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 // Project imports
-import 'package:flweather/services/location_service.dart';
-import 'package:flweather/services/weather_service.dart';
+import 'services/location_service.dart';
+import 'services/weather_service.dart';
+import 'settings_page.dart';
 import 'models/weather_model.dart';
 import 'models/location_model.dart';
-import 'package:flweather/settings_page.dart';
 import 'enums/shared_prefs_keys.dart';
 import 'enums/temperature_units.dart';
 
@@ -67,11 +71,18 @@ class _MainPageState extends State<MainPage> {
   // Temperature units
   final TemperatureUnitsUtilities _tempUnitsUtils = TemperatureUnitsUtilities();
 
+  // Clock
+  late String _currentTime;
+  late Timer _clockTimer;
+
+  // Runs before the page is built
   @override
   void initState() {
     super.initState();
-    // Initializes shared preferences before the page is built
+    // Initializes shared preferences
     _initSharedPreferences();
+    // Starts the timer updating current time
+    _startClock();
   }
 
   void _initSharedPreferences() async {
@@ -143,6 +154,30 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
+  void _startClock() {
+    _updateClock();
+    _clockTimer = Timer.periodic(
+      Duration(seconds: 1),
+      (timer) => _updateClock(),
+    );
+  }
+
+  void _updateClock() {
+    DateTime time = DateTime.now();
+    String formattedDate = DateFormat('d-M-y \n kk:mm:ss').format(time);
+    setState(() {
+      _currentTime = formattedDate;
+    });
+  }
+
+  @override
+  void dispose() {
+    // Cancel the clock timer
+    _clockTimer.cancel();
+    super.dispose();
+  }
+
+  // --------------------------------- BUILD ---------------------------------
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -152,6 +187,11 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            const Text("Current time:", style: TextStyle(fontSize: 30)),
+            Text(
+              _currentTime,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const Text("Current location:", style: TextStyle(fontSize: 30)),
             Text(
               _locationCoords,
