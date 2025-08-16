@@ -5,8 +5,8 @@ import "package:flutter/material.dart";
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Project imports
-import 'enums/temperature_units.dart';
-import 'enums/shared_prefs_keys.dart';
+import '../enums/temperature_units.dart';
+import '../enums/shared_prefs_keys.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
