@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // Package imports
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
 // Project imports
 import 'services/location_service.dart';
@@ -187,6 +188,10 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            SizedBox(
+              height: 400,
+              child: Flutter3DViewer(src: "assets/3d/sunny_icon.glb"),
+            ),
             const Text("Current time:", style: TextStyle(fontSize: 30)),
             Text(
               _currentTime,
