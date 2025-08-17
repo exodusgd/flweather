@@ -13,6 +13,7 @@ import '../enums/shared_prefs_keys.dart';
 import '../enums/location_options.dart';
 import '../utils/shared_prefs_utils.dart';
 import '../utils/temperature_units_utils.dart';
+import '../utils/location_options_utils.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -75,12 +76,22 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
         SharedPrefsKeys.temperatureUnit.toString(),
       );
       if (tempUnit != null) {
-        _currentTemperatureUnit = TemperatureUnitsUtils.convertStringToValue(
-          tempUnit,
-        )!;
-        // Call setState to update the button
-        setState(() {});
+        // Update the button
+        setState(() {
+          _currentTemperatureUnit = TemperatureUnitsUtils.convertStringToValue(
+            tempUnit,
+          )!;
+        });
       }
+    }
+  }
+
+  void _saveCurrentTempUnit() {
+    if (_sharedPrefs != null) {
+      _sharedPrefs!.setString(
+        SharedPrefsKeys.temperatureUnit.toString(),
+        _currentTemperatureUnit.toString(),
+      );
     }
   }
 
@@ -102,12 +113,7 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
         setState(() {
           _currentTemperatureUnit = newSelection.first;
         });
-        if (_sharedPrefs != null) {
-          _sharedPrefs!.setString(
-            SharedPrefsKeys.temperatureUnit.toString(),
-            _currentTemperatureUnit.toString(),
-          );
-        }
+        _saveCurrentTempUnit();
       },
     );
   }
@@ -126,6 +132,9 @@ class LocationDropdownMenu extends StatefulWidget {
 }
 
 class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
+  // Shared preferences
+  SharedPreferences? _sharedPrefs;
+
   final LocationOptions _defaultLocation = LocationOptions.current;
   late LocationOptions _currentLocation;
 
@@ -139,6 +148,28 @@ class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
     _currentLocation = _defaultLocation;
     _initValueLists();
     _initMenuEntries();
+    _initSharedPrefs();
+  }
+
+  void _initSharedPrefs() async {
+    _sharedPrefs = await SharedPrefsUtils.getSharedPrefs();
+    _updateLocationSelection();
+  }
+
+  void _updateLocationSelection() {
+    if (_sharedPrefs != null) {
+      String? weatherLoc = _sharedPrefs!.getString(
+        SharedPrefsKeys.weatherLocation.toString(),
+      );
+      if (weatherLoc != null) {
+        // Update the dropdown menu
+        setState(() {
+          _currentLocation = LocationOptionsUtils.convertStringToValue(
+            weatherLoc,
+          )!;
+        });
+      }
+    }
   }
 
   void _initValueLists() {
@@ -159,7 +190,6 @@ class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
           _locationOptionValueToString[loc] = "Faro";
       }
     }
-    print(_locationOptionValueToString);
   }
 
   void _initMenuEntries() {
@@ -171,14 +201,24 @@ class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
     );
   }
 
+  void _saveCurrentLocation() {
+    if (_sharedPrefs != null) {
+      _sharedPrefs!.setString(
+        SharedPrefsKeys.weatherLocation.toString(),
+        _currentLocation.toString(),
+      );
+    }
+  }
+
   // --------------------------------- BUILD ---------------------------------
   @override
   Widget build(BuildContext context) {
     return DropdownMenu<LocationOptions>(
-      initialSelection: LocationOptions.current,
+      initialSelection: _currentLocation,
       onSelected: (LocationOptions? value) {
         setState(() {
           _currentLocation = value!;
+          _saveCurrentLocation();
         });
       },
       dropdownMenuEntries: _menuEntries,
