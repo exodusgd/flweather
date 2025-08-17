@@ -4,11 +4,15 @@ import 'dart:collection';
 // Flutter imports
 import "package:flutter/material.dart";
 
+// Package imports
+import 'package:shared_preferences/shared_preferences.dart';
+
 // Project imports
 import '../enums/temperature_units.dart';
 import '../enums/shared_prefs_keys.dart';
 import '../enums/location_options.dart';
 import '../utils/shared_prefs_utils.dart';
+import '../utils/temperature_units_utils.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -44,25 +48,39 @@ class TemperatureUnitButton extends StatefulWidget {
 }
 
 class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
+  // Shared preferences
+  SharedPreferences? _sharedPrefs;
+
   // Temperature units vars
   final TemperatureUnits _defaultTemperatureUnit = TemperatureUnits.celsius;
   late TemperatureUnits _currentTemperatureUnit;
-  final TemperatureUnitsUtilities _tempUnitsUtils = TemperatureUnitsUtilities();
 
   // InitState runs before the button is built
   @override
   void initState() {
     super.initState();
     _currentTemperatureUnit = _defaultTemperatureUnit;
+    _initSharedPrefs();
+  }
 
-    // Get temperature unit from shared preferences
-    String? tempUnit = SharedPrefsUtils.instance.getString(
-      SharedPrefsKeys.temperatureUnit.toString(),
-    );
-    if (tempUnit != null) {
-      _currentTemperatureUnit = _tempUnitsUtils.convertStringToValue(tempUnit)!;
-      // Call setState to update the button
-      setState(() {});
+  void _initSharedPrefs() async {
+    _sharedPrefs = await SharedPrefsUtils.getSharedPrefs();
+    _updateTempUnitSelection();
+  }
+
+  void _updateTempUnitSelection() {
+    if (_sharedPrefs != null) {
+      // Get temperature unit from shared preferences
+      String? tempUnit = _sharedPrefs!.getString(
+        SharedPrefsKeys.temperatureUnit.toString(),
+      );
+      if (tempUnit != null) {
+        _currentTemperatureUnit = TemperatureUnitsUtils.convertStringToValue(
+          tempUnit,
+        )!;
+        // Call setState to update the button
+        setState(() {});
+      }
     }
   }
 
@@ -84,10 +102,12 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
         setState(() {
           _currentTemperatureUnit = newSelection.first;
         });
-        SharedPrefsUtils.instance.setString(
-          SharedPrefsKeys.temperatureUnit.toString(),
-          _currentTemperatureUnit.toString(),
-        );
+        if (_sharedPrefs != null) {
+          _sharedPrefs!.setString(
+            SharedPrefsKeys.temperatureUnit.toString(),
+            _currentTemperatureUnit.toString(),
+          );
+        }
       },
     );
   }

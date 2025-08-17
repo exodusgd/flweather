@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // Package imports
 import 'package:intl/intl.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Project imports
 import '../services/location_service.dart';
@@ -17,6 +18,7 @@ import '../enums/shared_prefs_keys.dart';
 import '../enums/temperature_units.dart';
 import '../enums/weather_conditions.dart';
 import '../utils/shared_prefs_utils.dart';
+import '../utils/temperature_units_utils.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -51,7 +53,9 @@ class _MainPageState extends State<MainPage> {
     // API key from openweathermap.org
     apiKey: "391870125944c3e1dd3eb3d26bdf5f85",
   );
-  final TemperatureUnitsUtilities _tempUnitsUtils = TemperatureUnitsUtilities();
+
+  // Shared preferences
+  SharedPreferences? _sharedPrefs;
 
   // --------------------------- CLASS FUNCTIONS ---------------------------
 
@@ -60,6 +64,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _startClock();
+    _initSharedPrefs();
   }
 
   @override
@@ -67,6 +72,10 @@ class _MainPageState extends State<MainPage> {
     // Cancel the clock timer
     _clockTimer.cancel();
     super.dispose();
+  }
+
+  void _initSharedPrefs() async{
+    _sharedPrefs = await SharedPrefsUtils.getSharedPrefs();
   }
 
   // Starts the timer updating clock display
@@ -156,13 +165,13 @@ class _MainPageState extends State<MainPage> {
   }
 
   // Reformats temperature display if the temp unit to use has changed
-  void _updateTemperatureUnit() {
-    if (_hasReceivedWeatherInfo) {
-      String? tempUnitString = SharedPrefsUtils.instance.getString(
+  void _updateTemperatureUnit() async{
+    if (_hasReceivedWeatherInfo && _sharedPrefs!= null) {
+      String? tempUnitString = _sharedPrefs!.getString(
         SharedPrefsKeys.temperatureUnit.toString(),
       );
       if (tempUnitString != null) {
-        TemperatureUnits tempUnit = _tempUnitsUtils.convertStringToValue(
+        TemperatureUnits tempUnit = TemperatureUnitsUtils.convertStringToValue(
           tempUnitString,
         )!;
         if (tempUnit != _currentTemperatureUnit) {

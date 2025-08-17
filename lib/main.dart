@@ -4,15 +4,8 @@ import 'package:flutter/material.dart';
 // Project imports
 import 'pages/main_page.dart';
 import 'pages/settings_page.dart';
-import 'utils/shared_prefs_utils.dart';
 
-void main() async{
-  // Required for async calls in `main`
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize SharedPrefs instance.
-  await SharedPrefsUtils.init();
-
+void main() {
   runApp(const FlweatherApp());
 }
 
@@ -31,5 +24,3 @@ class FlweatherApp extends StatelessWidget {
     );
   }
 }
-
-
