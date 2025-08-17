@@ -15,6 +15,8 @@ class FlweatherApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // TODO: Uncomment the line below to remove debug banner
+      //debugShowCheckedModeBanner: false,
       title: 'Flweather',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),

@@ -5,8 +5,6 @@ class Weather {
   final String cityName;
   final String countryCode;
   final double currentTemperature;
-  final double minTemperature;
-  final double maxTemperature;
   final String conditionString;
   WeatherConditions? condition;
 
@@ -14,8 +12,6 @@ class Weather {
     required this.cityName,
     required this.countryCode,
     required this.currentTemperature,
-    required this.minTemperature,
-    required this.maxTemperature,
     required this.conditionString,
   }) {
     condition = _apiConditionStringToValue(conditionString);
@@ -26,8 +22,6 @@ class Weather {
       cityName: json["name"],
       countryCode: json["sys"]["country"],
       currentTemperature: json["main"]["temp"].toDouble(),
-      minTemperature: json["main"]["temp_min"].toDouble(),
-      maxTemperature: json["main"]["temp_max"].toDouble(),
       conditionString: json["weather"][0]["main"],
     );
   }

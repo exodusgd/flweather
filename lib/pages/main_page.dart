@@ -36,19 +36,20 @@ class _MainPageState extends State<MainPage> {
   bool _hasFetchedLocationAndWeather = false;
 
   // Display vars
-  String _currentLocationCoords = "Null";
-  String _currentLocationName = "Null";
+  String _currentLocationName = "";
   LocationOptions _selectedLocationOption = LocationOptions.current;
 
   double _currentTemperature = 0;
-  String _currentTemperatureString = "Null";
+  String _currentTemperatureString = "";
+  String _currentTemperatureUnitString = "";
   TemperatureUnits _currentTemperatureUnit = TemperatureUnits.celsius;
 
-  String _currentWeatherCondition = "Null";
   // TODO: change default 3D icon
   String _3dModelPath = "assets/3d/sunny_icon.glb";
   // Clock
-  late String _currentTime;
+  late String _currentDate;
+  late String _currentTimeHM;
+  late String _currentTimeSecs;
   late Timer _clockTimer;
 
   // Services
@@ -96,9 +97,13 @@ class _MainPageState extends State<MainPage> {
   // Updates clock display with current time
   void _updateClock() {
     DateTime time = DateTime.now();
-    String formattedDate = DateFormat('d-M-y \n kk:mm:ss').format(time);
+    String formattedDate = DateFormat("d-M-y").format(time);
+    String formattedTimeHM = DateFormat("kk:mm").format(time);
+    String formattedTimeSecs = DateFormat(":ss").format(time);
     setState(() {
-      _currentTime = formattedDate;
+      _currentDate = formattedDate;
+      _currentTimeHM = formattedTimeHM;
+      _currentTimeSecs = formattedTimeSecs;
     });
   }
 
@@ -159,9 +164,6 @@ class _MainPageState extends State<MainPage> {
   // Updates current location var based on given location and updates display
   void _updateCurrentLocation(Location newLocation) {
     setState(() {
-      _currentLocationCoords =
-          "lat: ${newLocation.latitude.toString()} \n"
-          "long: ${newLocation.longitude.toString()}";
       _currentLocationName = "${newLocation.locality}, ${newLocation.country}";
     });
   }
@@ -171,13 +173,7 @@ class _MainPageState extends State<MainPage> {
     _hasReceivedWeatherInfo = true;
     _currentTemperature = newWeather.currentTemperature;
     _updateWeather3DModel(newWeather.condition!);
-    setState(() {
-      _currentTemperatureString = _formatTemperature(
-        _currentTemperature,
-        _currentTemperatureUnit,
-      );
-      _currentWeatherCondition = newWeather.conditionString;
-    });
+    _updateTemperatureDisplay();
   }
 
   // Changes the displayed 3D model based on the weather condition
@@ -243,10 +239,8 @@ class _MainPageState extends State<MainPage> {
   // TODO: Find another solution to show the info is loading
   void _setLoadingText() {
     setState(() {
-      _currentLocationCoords = "loading...";
       _currentLocationName = "loading...";
       _currentTemperatureString = "loading...";
-      _currentWeatherCondition = "loading...";
     });
   }
 
@@ -255,11 +249,12 @@ class _MainPageState extends State<MainPage> {
     String newTemperature = "Null";
     switch (tempUnit) {
       case TemperatureUnits.celsius:
-        newTemperature = "${(tempToFormat - 273.15).round().toString()} ºC";
+        newTemperature = (tempToFormat - 273.15).round().toString();
+        _currentTemperatureUnitString = "ºC";
 
       case TemperatureUnits.fahrenheit:
-        newTemperature =
-            "${(1.8 * (tempToFormat - 273) + 32).round().toString()} ºF";
+        newTemperature = (1.8 * (tempToFormat - 273) + 32).round().toString();
+        _currentTemperatureUnitString = "ºF";
     }
     return newTemperature;
   }
@@ -268,35 +263,80 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            SizedBox(height: 400, child: Flutter3DViewer(src: _3dModelPath)),
-            const Text("Current time:", style: TextStyle(fontSize: 30)),
-            Text(
-              _currentTime,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const Text("Current location:", style: TextStyle(fontSize: 30)),
-            Text(
-              _currentLocationCoords,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Text(
-              _currentLocationName,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const Text("Weather at location:", style: TextStyle(fontSize: 30)),
-            Text(
-              _currentTemperatureString,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Text(
-              _currentWeatherCondition,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: Container(
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [const Color(0xFF41B2DC), const Color(0xFF0E4BBC)],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              // ----------------- Location -----------------
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 20),
+                child: Text(
+                  _currentLocationName,
+                  style: Theme.of(context).textTheme.displaySmall,
+                ),
+              ),
+              // ------------------- Time -------------------
+              Padding(
+                padding: const EdgeInsets.only(left:40),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _currentTimeHM,
+                      style: Theme.of(context).textTheme.displayLarge,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2, bottom: 5),
+                      child: Text(
+                        _currentTimeSecs,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // ------------------- Date -------------------
+              Text(
+                _currentDate,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              // ------------------ 3D View ------------------
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(height: MediaQuery.of(context).size.height*0.4, child: Flutter3DViewer(src: _3dModelPath)),
+              ),
+              // ---------------- Temperature ----------------
+              Padding(
+                padding: const EdgeInsets.only(left:30),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _currentTemperatureString,
+                      style: Theme.of(context).textTheme.displayLarge,
+                    ),
+                    Text(
+                      _currentTemperatureUnitString,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ],
+                ),
+              ),
+              // ---------------------------------------------
+            ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
@@ -307,7 +347,7 @@ class _MainPageState extends State<MainPage> {
             "settings",
           ).then((value) => {_loadTemperatureUnit(), _loadLocationOption()});
         },
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Color(0xFF0E5FBC),
         child: const Icon(Icons.settings),
       ),
     );
