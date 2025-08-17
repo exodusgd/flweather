@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 // Package imports
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
@@ -17,6 +16,7 @@ import '../models/location_model.dart';
 import '../enums/shared_prefs_keys.dart';
 import '../enums/temperature_units.dart';
 import '../enums/weather_conditions.dart';
+import '../utils/shared_prefs_utils.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -52,7 +52,6 @@ class _MainPageState extends State<MainPage> {
     apiKey: "391870125944c3e1dd3eb3d26bdf5f85",
   );
   final TemperatureUnitsUtilities _tempUnitsUtils = TemperatureUnitsUtilities();
-  SharedPreferences? _sharedPrefs;
 
   // --------------------------- CLASS FUNCTIONS ---------------------------
 
@@ -60,7 +59,6 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _initSharedPreferences();
     _startClock();
   }
 
@@ -69,11 +67,6 @@ class _MainPageState extends State<MainPage> {
     // Cancel the clock timer
     _clockTimer.cancel();
     super.dispose();
-  }
-
-  // Initializes shared preferences
-  void _initSharedPreferences() async {
-    _sharedPrefs = await SharedPreferences.getInstance();
   }
 
   // Starts the timer updating clock display
@@ -164,8 +157,8 @@ class _MainPageState extends State<MainPage> {
 
   // Reformats temperature display if the temp unit to use has changed
   void _updateTemperatureUnit() {
-    if (_sharedPrefs != null && _hasReceivedWeatherInfo) {
-      String? tempUnitString = _sharedPrefs!.getString(
+    if (_hasReceivedWeatherInfo) {
+      String? tempUnitString = SharedPrefsUtils.instance.getString(
         SharedPrefsKeys.temperatureUnit.toString(),
       );
       if (tempUnitString != null) {

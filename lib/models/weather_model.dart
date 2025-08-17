@@ -50,7 +50,8 @@ class Weather {
         return WeatherConditions.cloudy;
 
       default:
-        throw Exception("Failed to convert API weather condition to a value");
+        // TODO: Figure out how to handle remaining weather conditions
+        return WeatherConditions.cloudy;
     }
   }
 }

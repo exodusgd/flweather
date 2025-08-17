@@ -4,8 +4,15 @@ import 'package:flutter/material.dart';
 // Project imports
 import 'pages/main_page.dart';
 import 'pages/settings_page.dart';
+import 'utils/shared_prefs_utils.dart';
 
-void main() {
+void main() async{
+  // Required for async calls in `main`
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SharedPrefs instance.
+  await SharedPrefsUtils.init();
+
   runApp(const FlweatherApp());
 }
 
