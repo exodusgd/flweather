@@ -33,6 +33,7 @@ class _MainPageState extends State<MainPage> {
   // --------------------------- CLASS VARIABLES ---------------------------
   // State vars
   bool _hasReceivedWeatherInfo = false;
+  bool _hasFetchedLocationAndWeather = false;
 
   // Display vars
   String _currentLocationCoords = "Null";
@@ -115,13 +116,19 @@ class _MainPageState extends State<MainPage> {
           _selectedLocationOption = locOption;
           // Fetch info from new selected location
           _fetchLocationAndWeather();
+          return;
         }
       }
+    }
+    if (!_hasFetchedLocationAndWeather) {
+      // Fetch info from default location
+      _fetchLocationAndWeather();
     }
   }
 
   // TODO: Display some sort of error message when location services/perms are not allowed
   void _fetchLocationAndWeather() async {
+    _hasFetchedLocationAndWeather = true;
     _setLoadingText();
     if (_selectedLocationOption == LocationOptions.current) {
       _locationService.getLocation().then(
@@ -224,7 +231,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   // Updates the temperature display
-  void _updateTemperatureDisplay(){
+  void _updateTemperatureDisplay() {
     setState(() {
       _currentTemperatureString = _formatTemperature(
         _currentTemperature,
