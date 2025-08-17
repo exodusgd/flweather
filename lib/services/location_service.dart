@@ -41,7 +41,7 @@ class LocationService {
             latitude: _locationData!.latitude!,
             longitude: _locationData!.longitude!,
             locality: placemarks.reversed.last.locality!,
-            country: placemarks.reversed.last.country!,
+            country: placemarks.reversed.last.isoCountryCode!,
           );
         } else {
           throw Exception(

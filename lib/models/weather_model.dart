@@ -3,6 +3,7 @@ import '../enums/weather_conditions.dart';
 class Weather {
   // TODO: check if cityName is in use
   final String cityName;
+  final String countryCode;
   final double currentTemperature;
   final double minTemperature;
   final double maxTemperature;
@@ -11,6 +12,7 @@ class Weather {
 
   Weather({
     required this.cityName,
+    required this.countryCode,
     required this.currentTemperature,
     required this.minTemperature,
     required this.maxTemperature,
@@ -22,6 +24,7 @@ class Weather {
   factory Weather.fromJson(Map<String, dynamic> json) {
     return Weather(
       cityName: json["name"],
+      countryCode: json["sys"]["country"],
       currentTemperature: json["main"]["temp"].toDouble(),
       minTemperature: json["main"]["temp_min"].toDouble(),
       maxTemperature: json["main"]["temp_max"].toDouble(),

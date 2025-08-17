@@ -17,6 +17,8 @@ import '../models/location_model.dart';
 import '../enums/shared_prefs_keys.dart';
 import '../enums/temperature_units.dart';
 import '../enums/weather_conditions.dart';
+import '../enums/location_options.dart';
+import '../utils/location_options_utils.dart';
 import '../utils/shared_prefs_utils.dart';
 import '../utils/temperature_units_utils.dart';
 
@@ -35,6 +37,7 @@ class _MainPageState extends State<MainPage> {
   // Display vars
   String _currentLocationCoords = "Null";
   String _currentLocationName = "Null";
+  LocationOptions _selectedLocationOption = LocationOptions.current;
 
   double _currentTemperature = 0;
   String _currentTemperatureString = "Null";
@@ -74,8 +77,10 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
-  void _initSharedPrefs() async{
+  void _initSharedPrefs() async {
     _sharedPrefs = await SharedPrefsUtils.getSharedPrefs();
+    _loadLocationOption();
+    _loadTemperatureUnit();
   }
 
   // Starts the timer updating clock display
@@ -96,24 +101,59 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
+  // Loads location option from shared preferences
+  // and updates display if the selected location changed
+  void _loadLocationOption() {
+    if (_sharedPrefs != null) {
+      String? locOptionString = _sharedPrefs!.getString(
+        SharedPrefsKeys.weatherLocation.toString(),
+      );
+      if (locOptionString != null) {
+        LocationOptions locOption =
+            LocationOptionsUtils.convertSavedStringToValue(locOptionString)!;
+        if (locOption != _selectedLocationOption) {
+          _selectedLocationOption = locOption;
+          // Fetch info from new selected location
+          _fetchLocationAndWeather();
+        }
+      }
+    }
+  }
+
   // TODO: Display some sort of error message when location services/perms are not allowed
   void _fetchLocationAndWeather() async {
     _setLoadingText();
-    _locationService.getLocation().then(
-          (location) => {
-        _updateCurrentLocation(location!),
-        _weatherService
-            .getWeather(location.latitude, location.longitude)
-            .then((weather) => {_updateCurrentWeather(weather)}),
-      },
-    );
+    if (_selectedLocationOption == LocationOptions.current) {
+      _locationService.getLocation().then(
+        (location) => {
+          _updateCurrentLocation(location!),
+          _weatherService
+              .getWeatherByCoords(location.latitude, location.longitude)
+              .then((weather) => {_updateCurrentWeather(weather)}),
+        },
+      );
+    } else {
+      _weatherService
+          .getWeatherByCityID(
+            LocationOptionsUtils.getCityID(_selectedLocationOption)!,
+          )
+          .then(
+            (weather) => {
+              _updateCurrentWeather(weather),
+              _currentLocationName =
+                  "${weather.cityName}, ${weather.countryCode}",
+              // Update display
+              setState(() {}),
+            },
+          );
+    }
   }
 
   // Updates current location var based on given location and updates display
   void _updateCurrentLocation(Location newLocation) {
     setState(() {
       _currentLocationCoords =
-      "lat: ${newLocation.latitude.toString()} \n"
+          "lat: ${newLocation.latitude.toString()} \n"
           "long: ${newLocation.longitude.toString()}";
       _currentLocationName = "${newLocation.locality}, ${newLocation.country}";
     });
@@ -164,9 +204,10 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  // Reformats temperature display if the temp unit to use has changed
-  void _updateTemperatureUnit() async{
-    if (_hasReceivedWeatherInfo && _sharedPrefs!= null) {
+  // Loads temperature unit from shared preferences
+  // and updates display if the temperature unit to use has changed
+  void _loadTemperatureUnit() {
+    if (_hasReceivedWeatherInfo && _sharedPrefs != null) {
       String? tempUnitString = _sharedPrefs!.getString(
         SharedPrefsKeys.temperatureUnit.toString(),
       );
@@ -176,15 +217,20 @@ class _MainPageState extends State<MainPage> {
         )!;
         if (tempUnit != _currentTemperatureUnit) {
           _currentTemperatureUnit = tempUnit;
-          setState(() {
-            _currentTemperatureString = _formatTemperature(
-              _currentTemperature,
-              _currentTemperatureUnit,
-            );
-          });
+          _updateTemperatureDisplay();
         }
       }
     }
+  }
+
+  // Updates the temperature display
+  void _updateTemperatureDisplay(){
+    setState(() {
+      _currentTemperatureString = _formatTemperature(
+        _currentTemperature,
+        _currentTemperatureUnit,
+      );
+    });
   }
 
   // TODO: Find another solution to show the info is loading
@@ -206,7 +252,7 @@ class _MainPageState extends State<MainPage> {
 
       case TemperatureUnits.fahrenheit:
         newTemperature =
-        "${(1.8 * (tempToFormat - 273) + 32).round().toString()} ºF";
+            "${(1.8 * (tempToFormat - 273) + 32).round().toString()} ºF";
     }
     return newTemperature;
   }
@@ -243,12 +289,6 @@ class _MainPageState extends State<MainPage> {
               _currentWeatherCondition,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            ElevatedButton(
-              onPressed: () {
-                _fetchLocationAndWeather();
-              },
-              child: const Text("Get weather"),
-            ),
           ],
         ),
       ),
@@ -258,7 +298,7 @@ class _MainPageState extends State<MainPage> {
           Navigator.pushNamed(
             context,
             "settings",
-          ).then((value) => _updateTemperatureUnit());
+          ).then((value) => {_loadTemperatureUnit(), _loadLocationOption()});
         },
         backgroundColor: Colors.blueAccent,
         child: const Icon(Icons.settings),

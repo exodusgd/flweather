@@ -164,7 +164,7 @@ class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
       if (weatherLoc != null) {
         // Update the dropdown menu
         setState(() {
-          _currentLocation = LocationOptionsUtils.convertStringToValue(
+          _currentLocation = LocationOptionsUtils.convertSavedStringToValue(
             weatherLoc,
           )!;
         });
