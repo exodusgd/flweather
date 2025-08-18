@@ -41,12 +41,21 @@ class LocationService {
               _locationData!.longitude!,
             );
         if (placemarks.isNotEmpty) {
-          return Location(
-            latitude: _locationData!.latitude!,
-            longitude: _locationData!.longitude!,
-            locality: placemarks.reversed.last.locality!,
-            country: placemarks.reversed.last.isoCountryCode!,
-          );
+          if (placemarks.reversed.last.locality! != "") {
+            return Location(
+              latitude: _locationData!.latitude!,
+              longitude: _locationData!.longitude!,
+              locality: placemarks.reversed.last.locality!,
+              country: placemarks.reversed.last.isoCountryCode!,
+            );
+          }else{
+            return Location(
+              latitude: _locationData!.latitude!,
+              longitude: _locationData!.longitude!,
+              locality: placemarks.reversed.last.subAdministrativeArea!,
+              country: placemarks.reversed.last.isoCountryCode!,
+            );
+          }
         } else {
           // Failed to obtain location name from latitude/longitude
           return null;

@@ -37,6 +37,7 @@ class _MainPageState extends State<MainPage> {
   bool _hasFetchedLocationAndWeather = false;
   bool _canDisplayWeatherInfo = false;
   bool _canDrawTryAgainButton = false;
+  bool _canDraw3DView = true;
 
   // Display vars
   String _currentLocationName = "";
@@ -257,6 +258,7 @@ class _MainPageState extends State<MainPage> {
   void _updateWeather3DModel(WeatherConditions newWeatherCondition) {
     if (newWeatherCondition != _currentWeatherCondition) {
       _currentWeatherCondition = newWeatherCondition;
+      _canDraw3DView = true;
       String basePath = "assets/3d/";
       switch (newWeatherCondition) {
         case WeatherConditions.cloudy:
@@ -349,6 +351,11 @@ class _MainPageState extends State<MainPage> {
     if (_hasFetchedLocationAndWeather) {
       _displayWeatherInfo();
     }
+  }
+
+  void _on3DModelLoadError() {
+    _canDraw3DView = false;
+    _displayWeatherInfo();
   }
 
   // --------------------------------- BUILD ---------------------------------
@@ -449,18 +456,29 @@ class _MainPageState extends State<MainPage> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     // ------------------ 3D View ------------------
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.4,
-                        child: Flutter3DViewer(
-                          src: _3dModelPath,
-                          progressBarColor: Color(0x00FFFFFF),
-                          onLoad: (String modelAddress) {
-                            _on3DModelLoaded();
-                          },
-                        ),
-                      ),
+                    Builder(
+                      builder: (context) {
+                        if (_canDraw3DView) {
+                          return Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.4,
+                              child: Flutter3DViewer(
+                                src: _3dModelPath,
+                                progressBarColor: Color(0x00FFFFFF),
+                                onLoad: (String modelAddress) {
+                                  _on3DModelLoaded();
+                                },
+                                onError: (String error) {
+                                  _on3DModelLoadError();
+                                },
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Container();
+                        }
+                      },
                     ),
                     // ---------------- Temperature ----------------
                     Padding(

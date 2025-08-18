@@ -1,7 +1,6 @@
 import '../enums/weather_conditions.dart';
 
 class Weather {
-  // TODO: check if cityName is in use
   final String cityName;
   final String countryCode;
   final double currentTemperature;
@@ -47,7 +46,6 @@ class Weather {
         return WeatherConditions.cloudy;
 
       default:
-        // TODO: Figure out how to handle remaining weather conditions
         return WeatherConditions.cloudy;
     }
   }
