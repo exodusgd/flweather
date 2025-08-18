@@ -1,6 +1,6 @@
 # flweather
 
-A Flutter weather app for Android that displays the weather at the device's current location or at one of the predefined locations.
+An Android app built with Flutter that displays the weather at the device's current location or at one of the predefined locations.
 The current weather condition is displayed in an interactive 3D view with an icon that represents the weather.
 
 For Android builds [click here](https://github.com/exodusgd/flweather/tree/main/apks)
