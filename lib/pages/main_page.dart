@@ -65,6 +65,8 @@ class _MainPageState extends State<MainPage> {
       " or try again later.";
   final String _weatherServiceCallFailedMessage =
       "Could not retrieve current weather, please try again later.";
+  final String _timeOutMessage =
+      "Took too long to fetch current weather info, please try again later.";
 
   String _3dModelPath = "assets/3d/sunny_icon.glb";
   // Clock
@@ -73,6 +75,9 @@ class _MainPageState extends State<MainPage> {
   late String _currentTimeMins;
   late String _currentTimeSecs;
   late Timer _clockTimer;
+  late Timer _timeOutTimer;
+  // Maximum amount of time to wait for weather info before timeout
+  final int _maxTimeFetchingWeather = 30;
 
   // Services
   final LocationService _locationService = LocationService();
@@ -114,6 +119,21 @@ class _MainPageState extends State<MainPage> {
       Duration(seconds: 1),
       (timer) => _updateClock(),
     );
+  }
+
+  void _startTimeOutTimer() {
+    _timeOutTimer = Timer(
+      Duration(seconds: _maxTimeFetchingWeather),
+      _timedOut,
+    );
+  }
+
+  void _stopTimeOutTimer() {
+    _timeOutTimer.cancel();
+  }
+
+  void _timedOut() {
+    _setStatusMessage(_timeOutMessage, true, false);
   }
 
   // Updates clock display with current time
@@ -158,6 +178,8 @@ class _MainPageState extends State<MainPage> {
   void _fetchLocationAndWeather() async {
     _canDisplayWeatherInfo = false;
     _setStatusMessage(_loadingMessage, false, false);
+    // Start timeout timer
+    _startTimeOutTimer();
     if (_selectedLocationOption == LocationOptions.current) {
       _locationService.checkServiceAndPermissions().then(
         (locError) => {
@@ -180,9 +202,13 @@ class _MainPageState extends State<MainPage> {
                                 _updateCurrentWeather(weather),
                                 // Successfully fetched loc and weather
                                 _hasFetchedLocationAndWeather = true,
+                                // Stop timeout timer
+                                _stopTimeOutTimer(),
                               }
                             else
                               {
+                                // Stop timeout timer
+                                _stopTimeOutTimer(),
                                 _setStatusMessage(
                                   // Failed to fetch weather
                                   _weatherServiceCallFailedMessage,
@@ -195,6 +221,8 @@ class _MainPageState extends State<MainPage> {
                   }
                 else
                   {
+                    // Stop timeout timer
+                    _stopTimeOutTimer(),
                     _setStatusMessage(
                       _locationServiceCallFailedMessage,
                       true,
@@ -203,17 +231,22 @@ class _MainPageState extends State<MainPage> {
                   },
               },
             ),
-            LocationErrors.servicesNotEnabled => _setStatusMessage(
-              _locationServicesNotEnabledMessage,
-              true,
-              true,
-            ),
 
-            LocationErrors.permissionsNotGranted => _setStatusMessage(
-              _locationPermissionsNotGrantedMessage,
-              true,
-              true,
-            ),
+            LocationErrors.servicesNotEnabled => {
+              // Stop timeout timer
+              _stopTimeOutTimer(),
+              _setStatusMessage(_locationServicesNotEnabledMessage, true, true),
+            },
+
+            LocationErrors.permissionsNotGranted => {
+              // Stop timeout timer
+              _stopTimeOutTimer(),
+              _setStatusMessage(
+                _locationPermissionsNotGrantedMessage,
+                true,
+                true,
+              ),
+            },
           },
         },
       );
@@ -233,6 +266,8 @@ class _MainPageState extends State<MainPage> {
                   _hasFetchedLocationAndWeather = true,
                   // Update display
                   setState(() {}),
+                  // Stop timeout timer
+                  _stopTimeOutTimer(),
                 }
               else
                 {
@@ -242,6 +277,8 @@ class _MainPageState extends State<MainPage> {
                     true,
                     false,
                   ),
+                  // Stop timeout timer
+                  _stopTimeOutTimer(),
                 },
             },
           );

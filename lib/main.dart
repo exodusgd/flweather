@@ -16,8 +16,7 @@ class FlweatherApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // TODO: Uncomment the line below to remove debug banner
-      //debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,
       title: 'Flweather',
       home: const MainPage(),
       routes: {"settings": (context) => const SettingsPage()},
