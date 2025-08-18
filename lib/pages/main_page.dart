@@ -33,8 +33,8 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   // --------------------------- CLASS VARIABLES ---------------------------
   // State vars
-  bool _isDisplayingWeatherInfo = false;
   bool _hasFetchedLocationAndWeather = false;
+  bool _canDisplayWeatherInfo = false;
 
   // Display vars
   String _currentLocationName = "";
@@ -44,6 +44,8 @@ class _MainPageState extends State<MainPage> {
   String _currentTemperatureString = "";
   String _currentTemperatureUnitString = "";
   TemperatureUnits _currentTemperatureUnit = TemperatureUnits.celsius;
+
+  String _currentDisplayMessage = "Cannot display weather info";
 
   // TODO: change default 3D icon
   String _3dModelPath = "assets/3d/sunny_icon.glb";
@@ -138,6 +140,7 @@ class _MainPageState extends State<MainPage> {
   // TODO: Display some sort of error message when location services/perms are not allowed
   void _fetchLocationAndWeather() async {
     _hasFetchedLocationAndWeather = true;
+    _canDisplayWeatherInfo = false;
     _setLoadingText();
     if (_selectedLocationOption == LocationOptions.current) {
       _locationService.getLocation().then(
@@ -174,10 +177,13 @@ class _MainPageState extends State<MainPage> {
 
   // Updates current weather var based on given weather and updates display
   void _updateCurrentWeather(Weather newWeather) {
-    _isDisplayingWeatherInfo = true;
     _currentTemperature = newWeather.currentTemperature;
     _updateWeather3DModel(newWeather.condition!);
     _updateTemperatureDisplay();
+  }
+
+  void _displayWeatherInfo(){
+    _canDisplayWeatherInfo = true;
   }
 
   // Changes the displayed 3D model based on the weather condition
@@ -214,7 +220,7 @@ class _MainPageState extends State<MainPage> {
   // Loads temperature unit from shared preferences
   // and updates display if the temperature unit to use has changed
   void _loadTemperatureUnit() {
-    if (_isDisplayingWeatherInfo && _sharedPrefs != null) {
+    if (_canDisplayWeatherInfo && _sharedPrefs != null) {
       String? tempUnitString = _sharedPrefs!.getString(
         SharedPrefsKeys.temperatureUnit.toString(),
       );
@@ -243,8 +249,7 @@ class _MainPageState extends State<MainPage> {
   // TODO: Find another solution to show the info is loading
   void _setLoadingText() {
     setState(() {
-      _currentLocationName = "loading...";
-      _currentTemperatureString = "loading...";
+      _currentDisplayMessage = "Loading weather info...";
     });
   }
 
@@ -267,120 +272,160 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(gradient: CustomColors.bgGradient),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                // ----------------- Location -----------------
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, bottom: 20),
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    _currentLocationName,
-                    style: Theme.of(context).textTheme.displaySmall,
-                  ),
-                ),
+      body: Stack(
+        children: [
+          Container(
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(gradient: CustomColors.bgGradient),
+            child: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    // ----------------- Location -----------------
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8, bottom: 20),
+                      child: Text(
+                        textAlign: TextAlign.center,
+                        _currentLocationName,
+                        style: Theme.of(context).textTheme.displaySmall,
+                      ),
+                    ),
 
-                // ------------------- Time -------------------
-                Padding(
-                  padding: EdgeInsets.only(
-                    left: MediaQuery.of(context).size.width * .11,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minWidth: MediaQuery.of(context).size.width * .15,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text(
-                            textAlign: TextAlign.right,
-                            _currentTimeHours,
+                    // ------------------- Time -------------------
+                    Padding(
+                      padding: EdgeInsets.only(
+                        left: MediaQuery.of(context).size.width * .11,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: MediaQuery.of(context).size.width * .15,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Text(
+                                textAlign: TextAlign.right,
+                                _currentTimeHours,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.displayMedium,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            ":",
                             style: Theme.of(context).textTheme.displayMedium,
                           ),
-                        ),
-                      ),
-                      Text(":", style: Theme.of(context).textTheme.displayMedium),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minWidth: MediaQuery.of(context).size.width * .15,
-                        ),
-                        child: Text(
-                          textAlign: TextAlign.center,
-                          _currentTimeMins,
-                          style: Theme.of(context).textTheme.displayMedium,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 2, bottom: 4),
-                        child: Text(
-                          ":",
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minWidth: MediaQuery.of(context).size.width * .1,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 2),
-                          child: Text(
-                            textAlign: TextAlign.left,
-                            _currentTimeSecs,
-                            style: Theme.of(context).textTheme.headlineSmall,
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: MediaQuery.of(context).size.width * .15,
+                            ),
+                            child: Text(
+                              textAlign: TextAlign.center,
+                              _currentTimeMins,
+                              style: Theme.of(context).textTheme.displayMedium,
+                            ),
                           ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 2, bottom: 4),
+                            child: Text(
+                              ":",
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: MediaQuery.of(context).size.width * .1,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                left: 4,
+                                bottom: 2,
+                              ),
+                              child: Text(
+                                textAlign: TextAlign.left,
+                                _currentTimeSecs,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ------------------- Date -------------------
+                    Text(
+                      _currentDate,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    // ------------------ 3D View ------------------
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.4,
+                        child: Flutter3DViewer(
+                          src: _3dModelPath,
+                          progressBarColor: Color(0x00FFFFFF),
+                          onLoad: (String modelAddress) {
+                            _displayWeatherInfo();
+                          },
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                // ------------------- Date -------------------
-                Text(_currentDate, style: Theme.of(context).textTheme.titleLarge),
-                // ------------------ 3D View ------------------
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.4,
-                    child: Flutter3DViewer(
-                      src: _3dModelPath,
-                      progressBarColor: Color(0x00FFFFFF),
                     ),
-                  ),
-                ),
-                // ---------------- Temperature ----------------
-                Padding(
-                  padding: const EdgeInsets.only(left: 30),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        textAlign: TextAlign.right,
-                        _currentTemperatureString,
-                        style: Theme.of(context).textTheme.displayLarge,
+                    // ---------------- Temperature ----------------
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            textAlign: TextAlign.right,
+                            _currentTemperatureString,
+                            style: Theme.of(context).textTheme.displayLarge,
+                          ),
+                          Text(
+                            textAlign: TextAlign.left,
+                            _currentTemperatureUnitString,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                        ],
                       ),
-                      Text(
-                        textAlign: TextAlign.left,
-                        _currentTemperatureUnitString,
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                    ],
-                  ),
+                    ),
+                    // ---------------------------------------------
+                  ],
                 ),
-                // ---------------------------------------------
-              ],
+              ),
             ),
           ),
-        ),
+          // ---------------- App state display message ----------------
+          Builder(
+            builder: (context) {
+              if (!_canDisplayWeatherInfo) {
+                return Container(
+                  height: MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(gradient: CustomColors.bgGradient),
+                  child: Center(
+                    child: Text(
+                      _currentDisplayMessage,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                );
+              }else{
+                return Container();
+              }
+            }
+          ),
+        ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       floatingActionButton: FloatingActionButton(
