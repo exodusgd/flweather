@@ -14,25 +14,37 @@ import '../enums/location_options.dart';
 import '../utils/shared_prefs_utils.dart';
 import '../utils/temperature_units_utils.dart';
 import '../utils/location_options_utils.dart';
+import '../styles/custom_colors.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Settings")),
-      body: Center(
-        child: Column(
-          children: [
-            Text("Temperature Unit"),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: TemperatureUnitButton(),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text("Settings"),
+        backgroundColor: const Color(0x00FFFFFF),
+      ),
+      body: Container(
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+        decoration: BoxDecoration(gradient: CustomColors.bgGradient),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              children: [
+                Text("Temperature Unit"),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: TemperatureUnitButton(),
+                ),
+          
+                Text("Weather Location"),
+                LocationDropdownMenu(),
+              ],
             ),
-
-            Text("Weather Location"),
-            LocationDropdownMenu(),
-          ],
+          ),
         ),
       ),
     );

@@ -21,6 +21,7 @@ import '../enums/location_options.dart';
 import '../utils/location_options_utils.dart';
 import '../utils/shared_prefs_utils.dart';
 import '../utils/temperature_units_utils.dart';
+import '../styles/custom_colors.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -48,7 +49,8 @@ class _MainPageState extends State<MainPage> {
   String _3dModelPath = "assets/3d/sunny_icon.glb";
   // Clock
   late String _currentDate;
-  late String _currentTimeHM;
+  late String _currentTimeHours;
+  late String _currentTimeMins;
   late String _currentTimeSecs;
   late Timer _clockTimer;
 
@@ -98,11 +100,13 @@ class _MainPageState extends State<MainPage> {
   void _updateClock() {
     DateTime time = DateTime.now();
     String formattedDate = DateFormat("d-M-y").format(time);
-    String formattedTimeHM = DateFormat("kk:mm").format(time);
-    String formattedTimeSecs = DateFormat(":ss").format(time);
+    String formattedTimeHours = DateFormat.H().format(time);
+    String formattedTimeMins = DateFormat("mm").format(time);
+    String formattedTimeSecs = DateFormat("ss").format(time);
     setState(() {
       _currentDate = formattedDate;
-      _currentTimeHM = formattedTimeHM;
+      _currentTimeHours = formattedTimeHours;
+      _currentTimeMins = formattedTimeMins;
       _currentTimeSecs = formattedTimeSecs;
     });
   }
@@ -266,13 +270,7 @@ class _MainPageState extends State<MainPage> {
       body: Container(
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [const Color(0xFF41B2DC), const Color(0xFF0E4BBC)],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: CustomColors.bgGradient),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -281,53 +279,91 @@ class _MainPageState extends State<MainPage> {
               Padding(
                 padding: const EdgeInsets.only(left: 8, bottom: 20),
                 child: Text(
+                  textAlign: TextAlign.center,
                   _currentLocationName,
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
               ),
+
               // ------------------- Time -------------------
               Padding(
-                padding: const EdgeInsets.only(left:40),
+                padding: EdgeInsets.only(left:MediaQuery.of(context).size.width * .12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      _currentTimeHM,
-                      style: Theme.of(context).textTheme.displayLarge,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width * .15,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Text(
+                          textAlign: TextAlign.right,
+                          _currentTimeHours,
+                          style: Theme.of(context).textTheme.displayMedium,
+                        ),
+                      ),
+                    ),
+                    Text(":", style: Theme.of(context).textTheme.displayMedium),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width * .15,
+                      ),
+                      child: Text(
+                        textAlign: TextAlign.center,
+                        _currentTimeMins,
+                        style: Theme.of(context).textTheme.displayMedium,
+                      ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 2, bottom: 5),
-                      child: Text(
-                        _currentTimeSecs,
-                        style: Theme.of(context).textTheme.headlineMedium,
+                      padding: const EdgeInsets.only(left:2,bottom: 4),
+                      child: Text(":", style: Theme.of(context).textTheme.headlineSmall),
+                    ),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: MediaQuery.of(context).size.width * .1,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 2),
+                        child: Text(
+                          textAlign: TextAlign.left,
+                          _currentTimeSecs,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+
               // ------------------- Date -------------------
               Text(
                 _currentDate,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               // ------------------ 3D View ------------------
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: SizedBox(height: MediaQuery.of(context).size.height*0.4, child: Flutter3DViewer(src: _3dModelPath)),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  child: Flutter3DViewer(src: _3dModelPath),
+                ),
               ),
               // ---------------- Temperature ----------------
               Padding(
-                padding: const EdgeInsets.only(left:30),
+                padding: const EdgeInsets.only(left: 30),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      textAlign: TextAlign.right,
                       _currentTemperatureString,
                       style: Theme.of(context).textTheme.displayLarge,
                     ),
                     Text(
+                      textAlign: TextAlign.left,
                       _currentTemperatureUnitString,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
@@ -347,8 +383,9 @@ class _MainPageState extends State<MainPage> {
             "settings",
           ).then((value) => {_loadTemperatureUnit(), _loadLocationOption()});
         },
-        backgroundColor: Color(0xFF0E5FBC),
-        child: const Icon(Icons.settings),
+        backgroundColor: Color(0x000E5FBC),
+        elevation: 0,
+        child: const Icon(Icons.settings, size: 40),
       ),
     );
   }
