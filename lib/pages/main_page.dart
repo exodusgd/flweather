@@ -9,6 +9,7 @@ import 'package:flweather/enums/location_errors.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_settings/app_settings.dart';
 
 // Project imports
 import '../services/location_service.dart';
@@ -37,6 +38,7 @@ class _MainPageState extends State<MainPage> {
   bool _hasFetchedLocationAndWeather = false;
   bool _canDisplayWeatherInfo = false;
   bool _canDrawTryAgainButton = false;
+  bool _canDrawLocationSettingsButton = false;
   bool _canDraw3DView = true;
 
   // Display vars
@@ -53,10 +55,10 @@ class _MainPageState extends State<MainPage> {
   String _currentStatusMessage = "Unknown error, please try again later";
   final String _loadingMessage = "Loading weather info...";
   final String _locationServicesNotEnabledMessage =
-      "Could not retrieve current location, please set a different weather location"
+      "Could not retrieve current location, please set a different location"
       " or turn on device location and try again.";
   final String _locationPermissionsNotGrantedMessage =
-      "Could not retrieve current location, please set a different weather location"
+      "Could not retrieve current location, please set a different location"
       " or allow location permissions and try again.";
   final String _locationServiceCallFailedMessage =
       "Could not retrieve current location, please set a different weather location"
@@ -155,7 +157,7 @@ class _MainPageState extends State<MainPage> {
 
   void _fetchLocationAndWeather() async {
     _canDisplayWeatherInfo = false;
-    _setStatusMessage(_loadingMessage, false);
+    _setStatusMessage(_loadingMessage, false, false);
     if (_selectedLocationOption == LocationOptions.current) {
       _locationService.checkServiceAndPermissions().then(
         (locError) => {
@@ -185,22 +187,31 @@ class _MainPageState extends State<MainPage> {
                                   // Failed to fetch weather
                                   _weatherServiceCallFailedMessage,
                                   true,
+                                  false,
                                 ),
                               },
                           },
                         ),
                   }
                 else
-                  {_setStatusMessage(_locationServiceCallFailedMessage, true)},
+                  {
+                    _setStatusMessage(
+                      _locationServiceCallFailedMessage,
+                      true,
+                      false,
+                    ),
+                  },
               },
             ),
             LocationErrors.servicesNotEnabled => _setStatusMessage(
               _locationServicesNotEnabledMessage,
               true,
+              true,
             ),
 
             LocationErrors.permissionsNotGranted => _setStatusMessage(
               _locationPermissionsNotGrantedMessage,
+              true,
               true,
             ),
           },
@@ -229,6 +240,7 @@ class _MainPageState extends State<MainPage> {
                     // Failed to fetch weather
                     _weatherServiceCallFailedMessage,
                     true,
+                    false,
                   ),
                 },
             },
@@ -325,10 +337,15 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  void _setStatusMessage(String newMessage, bool drawButton) {
+  void _setStatusMessage(
+    String newMessage,
+    bool showTryAgainBtn,
+    bool showLocSettingsBtn,
+  ) {
     setState(() {
       _currentStatusMessage = newMessage;
-      _canDrawTryAgainButton = drawButton;
+      _canDrawTryAgainButton = showTryAgainBtn;
+      _canDrawLocationSettingsButton = showLocSettingsBtn;
     });
   }
 
@@ -525,28 +542,61 @@ class _MainPageState extends State<MainPage> {
                             _currentStatusMessage,
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
-                          Builder(
-                            builder: (context) {
-                              if (_canDrawTryAgainButton) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _fetchLocationAndWeather();
-                                    },
-                                    child: Text(
-                                      textAlign: TextAlign.center,
-                                      "Try again",
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                return Container();
-                              }
-                            },
+                          Padding(
+                            padding: const EdgeInsets.only(top: 15),
+                            child: Column(
+                              children: [
+                                Builder(
+                                  builder: (context) {
+                                    if (_canDrawLocationSettingsButton) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 15,
+                                        ),
+                                        child: ElevatedButton.icon(
+                                          onPressed: () {
+                                            AppSettings.openAppSettings(
+                                              type: AppSettingsType.location,
+                                            );
+                                          },
+                                          icon: Icon(Icons.settings),
+                                          label: Text(
+                                            textAlign: TextAlign.center,
+                                            "Open Location Settings",
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      return Container();
+                                    }
+                                  },
+                                ),
+                                Builder(
+                                  builder: (context) {
+                                    if (_canDrawTryAgainButton) {
+                                      return ElevatedButton.icon(
+                                        onPressed: () {
+                                          _fetchLocationAndWeather();
+                                        },
+                                        icon: Icon(Icons.rotate_right),
+                                        label: Text(
+                                          textAlign: TextAlign.center,
+                                          "Try Again",
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleMedium,
+                                        ),
+                                      );
+                                    } else {
+                                      return Container();
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
