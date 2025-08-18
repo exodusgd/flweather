@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_settings/app_settings.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 // Project imports
 import '../services/location_service.dart';
@@ -77,10 +78,11 @@ class _MainPageState extends State<MainPage> {
   late Timer _clockTimer;
   late Timer _timeOutTimer;
   // Maximum amount of time to wait for weather info before timeout
-  final int _maxTimeFetchingWeather = 30;
+  final int _maxTimeFetchingWeather = 10;
 
   // Services
   final LocationService _locationService = LocationService();
+
   final WeatherService _weatherService = WeatherService(
     // API key from openweathermap.org
     apiKey: "391870125944c3e1dd3eb3d26bdf5f85",
@@ -129,7 +131,9 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _stopTimeOutTimer() {
-    _timeOutTimer.cancel();
+    if (_timeOutTimer.isActive) {
+      _timeOutTimer.cancel();
+    }
   }
 
   void _timedOut() {
@@ -163,16 +167,11 @@ class _MainPageState extends State<MainPage> {
             LocationOptionsUtils.convertSavedStringToValue(locOptionString)!;
         if (locOption != _selectedLocationOption) {
           _selectedLocationOption = locOption;
-          // Fetch info from new selected location
-          _fetchLocationAndWeather();
-          return;
         }
       }
     }
-    if (!_hasFetchedLocationAndWeather) {
-      // Fetch info from default location
-      _fetchLocationAndWeather();
-    }
+    // Fetch location and weather
+    _fetchLocationAndWeather();
   }
 
   void _fetchLocationAndWeather() async {
@@ -199,11 +198,12 @@ class _MainPageState extends State<MainPage> {
                           (weather) => {
                             if (weather != null)
                               {
-                                _updateCurrentWeather(weather),
                                 // Successfully fetched loc and weather
                                 _hasFetchedLocationAndWeather = true,
                                 // Stop timeout timer
                                 _stopTimeOutTimer(),
+
+                                _updateCurrentWeather(weather),
                               }
                             else
                               {
@@ -259,11 +259,12 @@ class _MainPageState extends State<MainPage> {
             (weather) => {
               if (weather != null)
                 {
-                  _updateCurrentWeather(weather),
                   _currentLocationName =
                       "${weather.cityName}, ${weather.countryCode}",
                   // Successfully fetched loc and weather
                   _hasFetchedLocationAndWeather = true,
+
+                  _updateCurrentWeather(weather),
                   // Update display
                   setState(() {}),
                   // Stop timeout timer
@@ -301,6 +302,7 @@ class _MainPageState extends State<MainPage> {
 
   void _displayWeatherInfo() {
     _canDisplayWeatherInfo = true;
+    setState(() {});
   }
 
   // Changes the displayed 3D model based on the weather condition
@@ -314,31 +316,25 @@ class _MainPageState extends State<MainPage> {
           _3dModelPath =
               "$basePath"
               "cloudy_icon.glb";
-          setState(() {});
 
         case WeatherConditions.rain:
           _3dModelPath =
               "$basePath"
               "rain_icon.glb";
-          setState(() {});
 
         case WeatherConditions.snow:
           _3dModelPath =
               "$basePath"
               "snow_icon.glb";
-          setState(() {});
 
         case WeatherConditions.sunny:
           _3dModelPath =
               "$basePath"
               "sunny_icon.glb";
-          setState(() {});
-
         case WeatherConditions.thunder:
           _3dModelPath =
               "$basePath"
               "thunder_icon.glb";
-          setState(() {});
       }
     } else {
       _displayWeatherInfo();
@@ -583,6 +579,7 @@ class _MainPageState extends State<MainPage> {
                             padding: const EdgeInsets.only(top: 15),
                             child: Column(
                               children: [
+                                // --------- Location settings button ---------
                                 Builder(
                                   builder: (context) {
                                     if (_canDrawLocationSettingsButton) {
@@ -611,6 +608,7 @@ class _MainPageState extends State<MainPage> {
                                     }
                                   },
                                 ),
+                                // ------------- Try again button -------------
                                 Builder(
                                   builder: (context) {
                                     if (_canDrawTryAgainButton) {
