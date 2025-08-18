@@ -9,35 +9,29 @@ class WeatherService {
 
   WeatherService({required this.apiKey});
 
-  Future<Weather> getWeatherByCoords(double latitude, double longitude) async {
+  Future<Weather?> getWeatherByCoords(double latitude, double longitude) async {
     final response = await http.get(
-      Uri.parse(
-          "$baseUrl?lat=$latitude&lon=$longitude&appid=$apiKey",
-      ),
+      Uri.parse("$baseUrl?lat=$latitude&lon=$longitude&appid=$apiKey"),
     );
 
     if (response.statusCode == 200) {
       return Weather.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception(
-        "Failed to load weather data, status code: ${response.statusCode}",
-      );
+      // Failed to load weather data
+      return null;
     }
   }
 
-  Future<Weather> getWeatherByCityID(String cityID) async {
+  Future<Weather?> getWeatherByCityID(String cityID) async {
     final response = await http.get(
-      Uri.parse(
-        "$baseUrl?id=$cityID&appid=$apiKey",
-      ),
+      Uri.parse("$baseUrl?id=$cityID&appid=$apiKey"),
     );
 
     if (response.statusCode == 200) {
       return Weather.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception(
-        "Failed to load weather data, status code: ${response.statusCode}",
-      );
+      // Failed to load weather data
+      return null;
     }
   }
 }

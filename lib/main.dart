@@ -40,8 +40,7 @@ class FlweatherApp extends StatelessWidget {
           style: MenuStyle(
             backgroundColor: WidgetStateProperty<Color>.fromMap(
               <WidgetStatesConstraint, Color>{
-               WidgetState.any:
-               CustomColors.skyBlue,
+                WidgetState.any: CustomColors.skyBlue,
               },
             ),
           ),
@@ -53,6 +52,16 @@ class FlweatherApp extends StatelessWidget {
                 WidgetState.pressed | WidgetState.focused:
                     CustomColors.darkSkyBlue,
                 WidgetState.hovered | WidgetState.any: CustomColors.skyBlue,
+              },
+            ),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty<Color>.fromMap(
+              <WidgetStatesConstraint, Color>{
+                WidgetState.pressed: CustomColors.skyBlue,
+                WidgetState.any: CustomColors.darkSkyBlue,
               },
             ),
           ),

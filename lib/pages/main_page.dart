@@ -3,6 +3,7 @@ import 'dart:async';
 
 // Flutter imports
 import 'package:flutter/material.dart';
+import 'package:flweather/enums/location_errors.dart';
 
 // Package imports
 import 'package:intl/intl.dart';
@@ -35,6 +36,7 @@ class _MainPageState extends State<MainPage> {
   // State vars
   bool _hasFetchedLocationAndWeather = false;
   bool _canDisplayWeatherInfo = false;
+  bool _canDrawTryAgainButton = false;
 
   // Display vars
   String _currentLocationName = "";
@@ -45,9 +47,22 @@ class _MainPageState extends State<MainPage> {
   String _currentTemperatureUnitString = "";
   TemperatureUnits _currentTemperatureUnit = TemperatureUnits.celsius;
 
-  String _currentDisplayMessage = "Cannot display weather info";
+  WeatherConditions _currentWeatherCondition = WeatherConditions.sunny;
 
-  // TODO: change default 3D icon
+  String _currentStatusMessage = "Unknown error, please try again later";
+  final String _loadingMessage = "Loading weather info...";
+  final String _locationServicesNotEnabledMessage =
+      "Could not retrieve current location, please set a different weather location"
+      " or turn on device location and try again.";
+  final String _locationPermissionsNotGrantedMessage =
+      "Could not retrieve current location, please set a different weather location"
+      " or allow location permissions and try again.";
+  final String _locationServiceCallFailedMessage =
+      "Could not retrieve current location, please set a different weather location"
+      " or try again later.";
+  final String _weatherServiceCallFailedMessage =
+      "Could not retrieve current weather, please try again later.";
+
   String _3dModelPath = "assets/3d/sunny_icon.glb";
   // Clock
   late String _currentDate;
@@ -137,18 +152,57 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  // TODO: Display some sort of error message when location services/perms are not allowed
   void _fetchLocationAndWeather() async {
-    _hasFetchedLocationAndWeather = true;
     _canDisplayWeatherInfo = false;
-    _setLoadingText();
+    _setStatusMessage(_loadingMessage, false);
     if (_selectedLocationOption == LocationOptions.current) {
-      _locationService.getLocation().then(
-        (location) => {
-          _updateCurrentLocation(location!),
-          _weatherService
-              .getWeatherByCoords(location.latitude, location.longitude)
-              .then((weather) => {_updateCurrentWeather(weather)}),
+      _locationService.checkServiceAndPermissions().then(
+        (locError) => {
+          switch (locError) {
+            // If error is null then services are enabled and permissions are granted
+            null => _locationService.getLocation().then(
+              (location) => {
+                if (location != null)
+                  {
+                    _updateCurrentLocation(location),
+                    _weatherService
+                        .getWeatherByCoords(
+                          location.latitude,
+                          location.longitude,
+                        )
+                        .then(
+                          (weather) => {
+                            if (weather != null)
+                              {
+                                _updateCurrentWeather(weather),
+                                // Successfully fetched loc and weather
+                                _hasFetchedLocationAndWeather = true,
+                              }
+                            else
+                              {
+                                _setStatusMessage(
+                                  // Failed to fetch weather
+                                  _weatherServiceCallFailedMessage,
+                                  true,
+                                ),
+                              },
+                          },
+                        ),
+                  }
+                else
+                  {_setStatusMessage(_locationServiceCallFailedMessage, true)},
+              },
+            ),
+            LocationErrors.servicesNotEnabled => _setStatusMessage(
+              _locationServicesNotEnabledMessage,
+              true,
+            ),
+
+            LocationErrors.permissionsNotGranted => _setStatusMessage(
+              _locationPermissionsNotGrantedMessage,
+              true,
+            ),
+          },
         },
       );
     } else {
@@ -158,11 +212,24 @@ class _MainPageState extends State<MainPage> {
           )
           .then(
             (weather) => {
-              _updateCurrentWeather(weather),
-              _currentLocationName =
-                  "${weather.cityName}, ${weather.countryCode}",
-              // Update display
-              setState(() {}),
+              if (weather != null)
+                {
+                  _updateCurrentWeather(weather),
+                  _currentLocationName =
+                      "${weather.cityName}, ${weather.countryCode}",
+                  // Successfully fetched loc and weather
+                  _hasFetchedLocationAndWeather = true,
+                  // Update display
+                  setState(() {}),
+                }
+              else
+                {
+                  _setStatusMessage(
+                    // Failed to fetch weather
+                    _weatherServiceCallFailedMessage,
+                    true,
+                  ),
+                },
             },
           );
     }
@@ -178,42 +245,52 @@ class _MainPageState extends State<MainPage> {
   // Updates current weather var based on given weather and updates display
   void _updateCurrentWeather(Weather newWeather) {
     _currentTemperature = newWeather.currentTemperature;
-    _updateWeather3DModel(newWeather.condition!);
     _updateTemperatureDisplay();
+    _updateWeather3DModel(newWeather.condition!);
   }
 
-  void _displayWeatherInfo(){
+  void _displayWeatherInfo() {
     _canDisplayWeatherInfo = true;
   }
 
   // Changes the displayed 3D model based on the weather condition
-  void _updateWeather3DModel(WeatherConditions weatherCondition) {
-    String basePath = "assets/3d/";
-    switch (weatherCondition) {
-      case WeatherConditions.cloudy:
-        _3dModelPath =
-            "$basePath"
-            "cloudy_icon.glb";
+  void _updateWeather3DModel(WeatherConditions newWeatherCondition) {
+    if (newWeatherCondition != _currentWeatherCondition) {
+      _currentWeatherCondition = newWeatherCondition;
+      String basePath = "assets/3d/";
+      switch (newWeatherCondition) {
+        case WeatherConditions.cloudy:
+          _3dModelPath =
+              "$basePath"
+              "cloudy_icon.glb";
+          setState(() {});
 
-      case WeatherConditions.rain:
-        _3dModelPath =
-            "$basePath"
-            "rain_icon.glb";
+        case WeatherConditions.rain:
+          _3dModelPath =
+              "$basePath"
+              "rain_icon.glb";
+          setState(() {});
 
-      case WeatherConditions.snow:
-        _3dModelPath =
-            "$basePath"
-            "snow_icon.glb";
+        case WeatherConditions.snow:
+          _3dModelPath =
+              "$basePath"
+              "snow_icon.glb";
+          setState(() {});
 
-      case WeatherConditions.sunny:
-        _3dModelPath =
-            "$basePath"
-            "sunny_icon.glb";
+        case WeatherConditions.sunny:
+          _3dModelPath =
+              "$basePath"
+              "sunny_icon.glb";
+          setState(() {});
 
-      case WeatherConditions.thunder:
-        _3dModelPath =
-            "$basePath"
-            "thunder_icon.glb";
+        case WeatherConditions.thunder:
+          _3dModelPath =
+              "$basePath"
+              "thunder_icon.glb";
+          setState(() {});
+      }
+    } else {
+      _displayWeatherInfo();
     }
   }
 
@@ -246,10 +323,10 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  // TODO: Find another solution to show the info is loading
-  void _setLoadingText() {
+  void _setStatusMessage(String newMessage, bool drawButton) {
     setState(() {
-      _currentDisplayMessage = "Loading weather info...";
+      _currentStatusMessage = newMessage;
+      _canDrawTryAgainButton = drawButton;
     });
   }
 
@@ -266,6 +343,12 @@ class _MainPageState extends State<MainPage> {
         _currentTemperatureUnitString = "ºF";
     }
     return newTemperature;
+  }
+
+  void _on3DModelLoaded() {
+    if (_hasFetchedLocationAndWeather) {
+      _displayWeatherInfo();
+    }
   }
 
   // --------------------------------- BUILD ---------------------------------
@@ -374,7 +457,7 @@ class _MainPageState extends State<MainPage> {
                           src: _3dModelPath,
                           progressBarColor: Color(0x00FFFFFF),
                           onLoad: (String modelAddress) {
-                            _displayWeatherInfo();
+                            _on3DModelLoaded();
                           },
                         ),
                       ),
@@ -405,7 +488,7 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          // ---------------- App state display message ----------------
+          // ---------------- App status display message ----------------
           Builder(
             builder: (context) {
               if (!_canDisplayWeatherInfo) {
@@ -414,16 +497,48 @@ class _MainPageState extends State<MainPage> {
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(gradient: CustomColors.bgGradient),
                   child: Center(
-                    child: Text(
-                      _currentDisplayMessage,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 50, right: 50),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            textAlign: TextAlign.justify,
+                            _currentStatusMessage,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          Builder(
+                            builder: (context) {
+                              if (_canDrawTryAgainButton) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      _fetchLocationAndWeather();
+                                    },
+                                    child: Text(
+                                      textAlign: TextAlign.center,
+                                      "Try again",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                return Container();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
-              }else{
+              } else {
                 return Container();
               }
-            }
+            },
           ),
         ],
       ),

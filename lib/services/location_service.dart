@@ -3,7 +3,8 @@ import 'package:location/location.dart' as loc;
 import 'package:geocoding/geocoding.dart' as geocod;
 
 // Project imports
-import 'package:flweather/models/location_model.dart';
+import '../models/location_model.dart';
+import '../enums/location_errors.dart';
 
 class LocationService {
   loc.Location flutterLocation = loc.Location();
@@ -11,12 +12,12 @@ class LocationService {
   loc.PermissionStatus? _locationPermissionStatus;
   loc.LocationData? _locationData;
 
-  Future<Location?> getLocation() async {
+  Future<LocationErrors?> checkServiceAndPermissions() async{
     _isLocationEnabled = await flutterLocation.serviceEnabled();
     if (!_isLocationEnabled) {
       _isLocationEnabled = await flutterLocation.requestService();
       if (!_isLocationEnabled) {
-        throw Exception("Location services are not enabled");
+        return LocationErrors.servicesNotEnabled;
       }
     }
 
@@ -24,10 +25,13 @@ class LocationService {
     if (_locationPermissionStatus == loc.PermissionStatus.denied) {
       _locationPermissionStatus = await flutterLocation.requestPermission();
       if (_locationPermissionStatus != loc.PermissionStatus.granted) {
-        throw Exception("Location permissions are not granted");
+        return LocationErrors.permissionsNotGranted;
       }
     }
+    return null;
+  }
 
+  Future<Location?> getLocation() async {
     _locationData = await flutterLocation.getLocation();
     if (_locationData != null) {
       if (_locationData!.longitude != null && _locationData!.latitude != null) {
@@ -44,17 +48,16 @@ class LocationService {
             country: placemarks.reversed.last.isoCountryCode!,
           );
         } else {
-          throw Exception(
-            "Failed to obtain location name from latitude/longitude",
-          );
+          // Failed to obtain location name from latitude/longitude
+          return null;
         }
       } else {
-        throw Exception(
-          "Failed to obtain latitude and/or longitude from location data",
-        );
+        // Failed to obtain latitude and/or longitude from location data
+        return null;
       }
     } else {
-      throw Exception("Failed to obtain location data");
+      // Failed to obtain location data
+      return null;
     }
   }
 }
