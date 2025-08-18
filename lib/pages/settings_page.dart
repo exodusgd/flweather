@@ -15,6 +15,7 @@ import '../utils/shared_prefs_utils.dart';
 import '../utils/temperature_units_utils.dart';
 import '../utils/location_options_utils.dart';
 import '../styles/custom_colors.dart';
+import '../styles/custom_styles.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -25,6 +26,10 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text("Settings"),
         backgroundColor: const Color(0x00FFFFFF),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Container(height: 2, color: CustomColors.cloudWhite),
+        ),
       ),
       body: Container(
         height: MediaQuery.of(context).size.height,
@@ -34,13 +39,25 @@ class SettingsPage extends StatelessWidget {
           child: Center(
             child: Column(
               children: [
-                Text("Temperature Unit"),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.only(top: 15),
+                  child: Text(
+                    "Temperature Unit",
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 15),
                   child: TemperatureUnitButton(),
                 ),
-          
-                Text("Weather Location"),
+
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(
+                    "Weather Location",
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
                 LocationDropdownMenu(),
               ],
             ),
@@ -110,14 +127,19 @@ class _TemperatureUnitButtonState extends State<TemperatureUnitButton> {
   @override
   Widget build(BuildContext context) {
     return SegmentedButton<TemperatureUnits>(
+      style: SegmentedButton.styleFrom(
+        side: BorderSide(width: 2, color: CustomColors.cloudWhite),
+        selectedBackgroundColor: CustomColors.darkSkyBlue,
+      ),
+
       segments: const <ButtonSegment<TemperatureUnits>>[
         ButtonSegment<TemperatureUnits>(
           value: TemperatureUnits.celsius,
-          label: Text("Celsius"),
+          label: Text("Celsius", style: CustomStyles.segButtonTextStyle),
         ),
         ButtonSegment<TemperatureUnits>(
           value: TemperatureUnits.fahrenheit,
-          label: Text("Fahrenheit"),
+          label: Text("Fahrenheit", style: CustomStyles.segButtonTextStyle),
         ),
       ],
       selected: <TemperatureUnits>{_currentTemperatureUnit},
@@ -207,8 +229,14 @@ class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
   void _initMenuEntries() {
     _menuEntries = UnmodifiableListView<MenuEntry>(
       locationOptionsValues.map<MenuEntry>(
-        (LocationOptions loc) =>
-            MenuEntry(value: loc, label: _locationOptionValueToString[loc]!),
+        (LocationOptions loc) => MenuEntry(
+          value: loc,
+          label: _locationOptionValueToString[loc]!,
+          labelWidget: Text(
+            _locationOptionValueToString[loc]!,
+            style: CustomStyles.dropdownMenuTextStyle,
+          ),
+        ),
       ),
     );
   }
@@ -226,7 +254,13 @@ class _LocationDropdownMenuState extends State<LocationDropdownMenu> {
   @override
   Widget build(BuildContext context) {
     return DropdownMenu<LocationOptions>(
+      leadingIcon: Icon(Icons.check),
       initialSelection: _currentLocation,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: CustomColors.darkSkyBlue,
+      ),
+      textStyle: CustomStyles.dropdownMenuTextStyle,
       onSelected: (LocationOptions? value) {
         setState(() {
           _currentLocation = value!;
