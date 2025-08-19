@@ -39,6 +39,7 @@ class _MainPageState extends State<MainPage> {
   bool _hasFetchedLocationAndWeather = false;
   bool _canDisplayWeatherInfo = false;
   bool _canDrawTryAgainButton = false;
+  bool _canDrawLoadingIcon = false;
   bool _canDrawLocationSettingsButton = false;
   bool _canDraw3DView = true;
 
@@ -53,8 +54,8 @@ class _MainPageState extends State<MainPage> {
 
   WeatherConditions _currentWeatherCondition = WeatherConditions.sunny;
 
-  String _currentStatusMessage = "Unknown error, please try again later";
-  final String _loadingMessage = "Loading weather info...";
+  String _currentStatusMessage = "";
+  final String _loadingMessage = "Loading weather";
   final String _locationServicesNotEnabledMessage =
       "Could not retrieve current location, please set a different location"
       " or turn on device location and try again.";
@@ -137,7 +138,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _timedOut() {
-    _setStatusMessage(_timeOutMessage, true, false);
+    _setStatusMessage(_timeOutMessage, true, false, false);
   }
 
   // Updates clock display with current time
@@ -176,7 +177,7 @@ class _MainPageState extends State<MainPage> {
 
   void _fetchLocationAndWeather() async {
     _canDisplayWeatherInfo = false;
-    _setStatusMessage(_loadingMessage, false, false);
+    _setStatusMessage(_loadingMessage, false, false, true);
     // Start timeout timer
     _startTimeOutTimer();
     if (_selectedLocationOption == LocationOptions.current) {
@@ -214,6 +215,7 @@ class _MainPageState extends State<MainPage> {
                                   _weatherServiceCallFailedMessage,
                                   true,
                                   false,
+                                  false,
                                 ),
                               },
                           },
@@ -227,6 +229,7 @@ class _MainPageState extends State<MainPage> {
                       _locationServiceCallFailedMessage,
                       true,
                       false,
+                      false,
                     ),
                   },
               },
@@ -235,7 +238,12 @@ class _MainPageState extends State<MainPage> {
             LocationErrors.servicesNotEnabled => {
               // Stop timeout timer
               _stopTimeOutTimer(),
-              _setStatusMessage(_locationServicesNotEnabledMessage, true, true),
+              _setStatusMessage(
+                _locationServicesNotEnabledMessage,
+                true,
+                true,
+                false,
+              ),
             },
 
             LocationErrors.permissionsNotGranted => {
@@ -245,6 +253,7 @@ class _MainPageState extends State<MainPage> {
                 _locationPermissionsNotGrantedMessage,
                 true,
                 true,
+                false,
               ),
             },
           },
@@ -276,6 +285,7 @@ class _MainPageState extends State<MainPage> {
                     // Failed to fetch weather
                     _weatherServiceCallFailedMessage,
                     true,
+                    false,
                     false,
                   ),
                   // Stop timeout timer
@@ -374,11 +384,13 @@ class _MainPageState extends State<MainPage> {
     String newMessage,
     bool showTryAgainBtn,
     bool showLocSettingsBtn,
+    bool showLoadingIcon,
   ) {
     setState(() {
       _currentStatusMessage = newMessage;
       _canDrawTryAgainButton = showTryAgainBtn;
       _canDrawLocationSettingsButton = showLocSettingsBtn;
+      _canDrawLoadingIcon = showLoadingIcon;
     });
   }
 
@@ -570,10 +582,38 @@ class _MainPageState extends State<MainPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            textAlign: TextAlign.justify,
-                            _currentStatusMessage,
-                            style: Theme.of(context).textTheme.headlineSmall,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  textAlign: TextAlign.justify,
+                                  _currentStatusMessage,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall,
+                                ),
+                              ),
+                              // ------------- Loading icon -------------
+                              Builder(
+                                builder: (context) {
+                                  if (_canDrawLoadingIcon) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(left: 10),
+                                      child: LoadingAnimationWidget.discreteCircle(
+                                        color: CustomColors.cloudWhite,
+                                        secondRingColor: CustomColors.lightSkyBlue,
+                                        thirdRingColor: CustomColors.darkSkyBlue,
+                                        size: 20,
+                                      ),
+                                    );
+                                  } else {
+                                    return Container();
+                                  }
+                                },
+                              ),
+                            ],
                           ),
                           Padding(
                             padding: const EdgeInsets.only(top: 15),
