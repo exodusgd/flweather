@@ -9,5 +9,4 @@ For Android builds [click here](https://github.com/exodusgd/flweather/tree/main/
 
 <img width="270" height="606" alt="image" src="https://github.com/user-attachments/assets/6e958e80-23b8-44d8-89ae-57ebfec79f16" />
 
-
-
+3D models by [Inna Sparrow on Fab](https://www.fab.com/listings/07b45e65-f53d-4c71-928d-7ddd8b842528) (slight changes were made)
