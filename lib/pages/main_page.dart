@@ -36,12 +36,16 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   // --------------------------- CLASS VARIABLES ---------------------------
   // State vars
-  bool _hasFetchedLocationAndWeather = false;
+  bool _hasLocationAndWeatherInfo = false;
+  bool _hasCompletedStartupFetching = false;
   bool _canDisplayWeatherInfo = false;
   bool _canDrawTryAgainButton = false;
   bool _canDrawLoadingIcon = false;
   bool _canDrawLocationSettingsButton = false;
   bool _canDraw3DView = true;
+  // How much time later to retry fetching info when initial startup attempt failed
+  // (in milliseconds)
+  final int _startupFetchingRetryDelay = 500;
 
   // Display vars
   String _currentLocationName = "";
@@ -168,11 +172,16 @@ class _MainPageState extends State<MainPage> {
             LocationOptionsUtils.convertSavedStringToValue(locOptionString)!;
         if (locOption != _selectedLocationOption) {
           _selectedLocationOption = locOption;
+          // Fetch info from new selected location
+          _fetchLocationAndWeather();
+          return;
         }
       }
     }
-    // Fetch location and weather
-    _fetchLocationAndWeather();
+    if (!_hasLocationAndWeatherInfo) {
+      // Fetch info from default location
+      _fetchLocationAndWeather();
+    }
   }
 
   void _fetchLocationAndWeather() async {
@@ -200,7 +209,7 @@ class _MainPageState extends State<MainPage> {
                             if (weather != null)
                               {
                                 // Successfully fetched loc and weather
-                                _hasFetchedLocationAndWeather = true,
+                                _hasLocationAndWeatherInfo = true,
                                 // Stop timeout timer
                                 _stopTimeOutTimer(),
 
@@ -271,7 +280,7 @@ class _MainPageState extends State<MainPage> {
                   _currentLocationName =
                       "${weather.cityName}, ${weather.countryCode}",
                   // Successfully fetched loc and weather
-                  _hasFetchedLocationAndWeather = true,
+                  _hasLocationAndWeatherInfo = true,
 
                   _updateCurrentWeather(weather),
                   // Update display
@@ -293,6 +302,19 @@ class _MainPageState extends State<MainPage> {
                 },
             },
           );
+    }
+    if (_hasLocationAndWeatherInfo && !_hasCompletedStartupFetching){
+      _hasCompletedStartupFetching = true;
+    }
+    if (!_hasCompletedStartupFetching) {
+      _hasCompletedStartupFetching = true;
+      // Stop timeout timer
+      _stopTimeOutTimer();
+      // Try again after set amount of time
+      Timer(
+        Duration(milliseconds: _startupFetchingRetryDelay),
+        _fetchLocationAndWeather,
+      );
     }
   }
 
@@ -410,7 +432,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _on3DModelLoaded() {
-    if (_hasFetchedLocationAndWeather) {
+    if (_hasLocationAndWeatherInfo) {
       _displayWeatherInfo();
     }
   }
@@ -601,12 +623,15 @@ class _MainPageState extends State<MainPage> {
                                   if (_canDrawLoadingIcon) {
                                     return Padding(
                                       padding: const EdgeInsets.only(left: 10),
-                                      child: LoadingAnimationWidget.discreteCircle(
-                                        color: CustomColors.cloudWhite,
-                                        secondRingColor: CustomColors.lightSkyBlue,
-                                        thirdRingColor: CustomColors.darkSkyBlue,
-                                        size: 20,
-                                      ),
+                                      child:
+                                          LoadingAnimationWidget.discreteCircle(
+                                            color: CustomColors.cloudWhite,
+                                            secondRingColor:
+                                                CustomColors.lightSkyBlue,
+                                            thirdRingColor:
+                                                CustomColors.darkSkyBlue,
+                                            size: 20,
+                                          ),
                                     );
                                   } else {
                                     return Container();
